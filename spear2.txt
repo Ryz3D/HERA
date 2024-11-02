@@ -6,13 +6,13 @@ two 8bit buses -> transfer word by default (both buses), read byte from only low
 flags: negative, zero, carry
 instructions all in one EEPROM. looks like: [INS] [LIT1] [LIT2]
 length of an instruction is defined by "write to bus" bits -> zero means literal follows -> proper IR incl. literal
-selectable predefined clock frequencies (< ~2MHz -> 555 limit)
+rotary switch -> predefined clock frequencies (0.25 Hz, 1 Hz, 10 Hz, 100 kHz, 2MHz -> 555 limit)
 
 - Software -
 intermediate language for large constructs (i.e. function, return, loop), all operations (annotation for keeping/restoring registers), better readability and generalised optimizations
   could be 6502 assembly
   could be interpreted written text ("jump based on carry bit")
-  incl. 32bit instructions (add LSB, PC_C, add MSB)
+  incl. 32bit constructs (add LSB, PC_C, add MSB)
 
 - PCB -
 SMD ICs, 74HC, maybe ACT (not 260, check availability)
@@ -22,49 +22,50 @@ register: probably xx374, xx16374 does exist but seems expensive
 bottom pins like compute module
 
 - Details -
-
 RAM:
 0x00 zeropage (incl. special addresses)
 0x01 stack
-0x02 default I (break out 8 decoded lines for simple output devices -> demultiplexer: 3 select bits, all remaining bits zero (NOR) as data input)
+0x02 default I (break out 8 decoded lines for simple input devices -> demultiplexer: 3 select bits, all remaining bits zero (NOR) as data input)
 0x03 default O (break out 8 decoded lines for simple output devices -> demultiplexer: 3 select bits, all remaining bits zero (NOR) as data input)
 general purpose outputs can be expanded by an external address decoder/selector at the expense of RAM size
 
-16 write lines:
-  A
-  B
-  C
-  D
-  PC
-  SP (byte)
-  STAT (byte)
-  RAM_P
-  RAM
-  ADD
-  COM
-  NOR
+12/16 write lines:
+  0x0 LIT
+  0x1 A
+  0x2 B
+  0x3 PC
+  0x4 SP (byte)
+  0x5 STAT (byte)
+  0x6 RAM_P
+  0x7 RAM_P (byte -> zeropage -> RPH pulled down)
+  0x8 RAM
+  0x9 reserved
+  0xA ADD
+  0xB COM
+  0xC NOR
   (4 remaining)
-16 read lines:
-  A
-  B
-  C
-  D
-  PC
-  PC_N
-  PC_Z
-  PC_C
-  SP (byte)
-  STAT (byte)
-  RAM_P
-  RAM
+12/16 read lines:
+  0x0 reserved
+  0x1 A
+  0x2 B
+  0x3 PC
+  0x4 SP (byte)
+  0x5 STAT (byte)
+  0x6 RAM_P
+  0x7 RAM_P (byte -> zeropage -> RPH pulled down)
+  0x8 RAM
+  0x9 reserved
+  0xA PC_N
+  0xB PC_Z
+  0xC PC_C
   (4 remaining)
 
     0011
     0101
 NOR 1000
-AND 0001 (invert inputs -> NOR)
-OR  0111 (NOR -> invert)
-XOR 0110 (NOR or AND -> invert)
+AND 0001  (invert inputs -> NOR)
+OR  0111  (NOR -> invert)
+XOR 0110  (NOR or AND -> invert)
 
     01
-NOT 10 (NOR with itself or literal 0x0000)
+NOT 10    (NOR with itself or literal 0x0000)
