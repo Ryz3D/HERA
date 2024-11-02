@@ -23,42 +23,41 @@ bottom pins like compute module
 
 - Details -
 RAM:
-0x00 zeropage (incl. special addresses)
-0x01 stack
-0x02 default I (break out 8 decoded lines for simple input devices -> demultiplexer: 3 select bits, all remaining bits zero (NOR) as data input)
-0x03 default O (break out 8 decoded lines for simple output devices -> demultiplexer: 3 select bits, all remaining bits zero (NOR) as data input)
+0x00 zeropage (incl. special addresses, 0x00FF 16bit stack pointer)
+0x01 default I (break out 8 decoded lines for simple input devices -> demultiplexer: 2 select bits, all remaining bits zero (NOR) as data input)
+0x02 default O (break out 8 decoded lines for simple output devices -> demultiplexer: 2 select bits, all remaining bits zero (NOR) as data input)
 general purpose outputs can be expanded by an external address decoder/selector at the expense of RAM size
 
-12/16 write lines:
+10/16 write lines:
   0x0 LIT
   0x1 A
   0x2 B
   0x3 PC
-  0x4 SP (byte)
-  0x5 STAT (byte)
-  0x6 RAM_P
-  0x7 RAM_P (byte -> zeropage -> RPH pulled down)
-  0x8 RAM
+  0x4 STAT (byte)
+  0x5 RAM_P
+  0x6 RAM
+  0x7 reserved (SP (byte))
+  0x8 reserved (RAM_P (byte -> zeropage -> RPH pulled down))
   0x9 reserved
   0xA ADD
   0xB COM
   0xC NOR
-  (4 remaining)
-12/16 read lines:
-  0x0 reserved
+  (6 remaining)
+10/16 read lines:
+  0x0 ignore
   0x1 A
   0x2 B
   0x3 PC
-  0x4 SP (byte)
-  0x5 STAT (byte)
-  0x6 RAM_P
-  0x7 RAM_P (byte -> zeropage -> RPH pulled down)
-  0x8 RAM
+  0x4 STAT (byte)
+  0x5 RAM_P
+  0x6 RAM
+  0x7 reserved (SP (byte))
+  0x8 reserved (RAM_P (byte -> zeropage -> RPH pulled down))
   0x9 reserved
   0xA PC_N
   0xB PC_Z
   0xC PC_C
-  (4 remaining)
+  (6 remaining)
 
     0011
     0101
