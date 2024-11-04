@@ -1,6 +1,4 @@
 - Architecture -
-! interrupt support
-  ! AND with irq enable flag, maybe override data flow from ROM to IR, force custom instructions
 16bit (RAM and ROM addresses) -> all buses, all registers, literals!, RAM (two chips parallel for 16bit values, four chips for 16bit addresses)
 two 8bit buses -> transfer word by default (both buses), read byte from only low bus
 flags: negative, zero, carry
@@ -9,8 +7,7 @@ length of an instruction is defined by "write to bus" bits -> zero means literal
 
 - Software -
 intermediate language for large constructs (i.e. function, return, loop), all operations (annotation for keeping/restoring registers), better readability and generalised optimizations
-  could be 6502 assembly
-  could be interpreted written text ("jump based on carry bit")
+  similar to spear assembly (i.e. "<< -> A")
   incl. 32bit constructs (add LSB, PC_C, add MSB)
 
 - PCB -
@@ -22,11 +19,17 @@ register: probably xx374, xx16374 does exist but seems expensive
 bottom pins like compute module
 
 - Details -
-RAM:
-0x00 zeropage (incl. special addresses, 0x00FF 16bit stack pointer)
+RAM pages:
+0x00 zeropage (incl. special addresses)
+  0x0011 A register temporary
+  0x0012 B register temporary
+  0x0013 C register temporary
+  0x00FF 16bit stack pointer
 0x01 default I (break out 8 decoded lines for simple input devices -> demultiplexer: 2 select bits, all remaining bits zero (NOR) as data input)
 0x02 default O (break out 8 decoded lines for simple output devices -> demultiplexer: 2 select bits, all remaining bits zero (NOR) as data input)
 general purpose outputs can be expanded by an external address decoder/selector at the expense of RAM size
+ROM:
+0x0000 reset
 
 11/16 write lines:
   0x0 LIT
@@ -46,7 +49,7 @@ general purpose outputs can be expanded by an external address decoder/selector 
   0xE reserved
   0xF reserved
   (5 remaining)
-11/16 read lines:
+14/16 read lines:
   0x0 ignore
   0x1 A
   0x2 B
@@ -57,20 +60,20 @@ general purpose outputs can be expanded by an external address decoder/selector 
   0x7 STAT (byte)
   0x8 reserved (SP (byte))
   0x9 reserved (RAM_P (byte -> zeropage -> RPH pulled down))
-  0xA reserved
+  0xA A & B
   0xB B & RAM_P
   0xC C & PC
-  0xD PC_N
+  0xD PC_C
   0xE PC_Z
-  0xF PC_C
-  (5 remaining)
+  0xF PC_N
+  (2 remaining)
 
     0011
     0101
 NOR 1000
 AND 0001  (invert inputs -> NOR)
 OR  0111  (NOR -> invert)
-XOR 0110  (NOR or AND -> invert)
+XOR 0110  (NOR nor AND)
 
     01
 NOT 10    (NOR with itself or literal 0x0000)
