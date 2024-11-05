@@ -13,7 +13,7 @@ intermediate language for large constructs (i.e. function, return, loop), all op
 - PCB -
 SMD ICs, 74HC, maybe ACT (not 260, check availability)
 SMD LEDs (bus, registers)
-rotary switch -> predefined clock frequencies (0.25 Hz, 1 Hz, 10 Hz, 100 kHz, 2MHz -> 555 limit)
+rotary switch -> predefined clock frequencies (0.25 Hz, 1 Hz, 10 Hz, 100 kHz, 2MHz -> 555 limit, could go up to 6MHz)
 visible, parallel bus traces (separate high/low buses perhaps)
 register: probably xx374, xx16374 does exist but seems expensive
 bottom pins like compute module
