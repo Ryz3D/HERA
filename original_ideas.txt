@@ -27,6 +27,8 @@ RAM pages:
   0x00FF 16bit stack pointer
 0x01 default I (break out 8 decoded lines for simple input devices -> demultiplexer: 2 select bits, all remaining bits zero (NOR) as data input)
 0x02 default O (break out 8 decoded lines for simple output devices -> demultiplexer: 2 select bits, all remaining bits zero (NOR) as data input)
+0xFE default stack
+  0xFEFF - 0xFE00
 general purpose outputs can be expanded by an external address decoder/selector at the expense of RAM size
 ROM:
 0x0000 reset

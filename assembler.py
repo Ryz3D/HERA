@@ -138,119 +138,56 @@ def load_logisim(path):
         raw = f.read()
     return parse_logisim(raw)
 
-asm_default_extras = {
-    'NOP': 'A -> VOID',
-    # register operations
-    'STA': "0x11 -> RAM_P; A -> RAM",
-    'RSA': "0x11 -> RAM_P; RAM -> A",
-    'STB': "0x12 -> RAM_P; B -> RAM",
-    'RSB': "0x12 -> RAM_P; RAM -> B",
-    'STC': "0x13 -> RAM_P; C -> RAM",
-    'RSC': "0x13 -> RAM_P; RAM -> C",
-    'INCA': ['b', """1 -> B; ADD -> A"""],
-    'DECA': ['b', """-1 -> B; ADD -> A"""],
-    'INCB': ['a', """1 -> A; ADD -> B"""],
-    'DECB': ['a', """-1 -> A; ADD -> B"""],
-    'INCC': ['ab', """C -> A; 1 -> B; ADD -> C"""],
-    'DECC': ['ab', """C -> A; -1 -> B; ADD -> C"""],
-    # RAM operations
-    'INC': ['ab', """RAM -> B; 1 -> A; ADD -> RAM"""],
-    'DEC': ['ab', """RAM -> B; -1 -> A; ADD -> RAM"""],
-    'IN': ['', """0x0100 -> RAM_P; RAM -> #"""],
-    'OUT': ['', """0x0200 -> RAM_P; # -> RAM"""],
-    'ARRINIT': ['', """1 -> A; # -> B RAM_P"""],
-    'ARR': ['', """# -> RAM; ADD -> B RAM_P"""],
-    # arithmetic operations
-    'SUB': ['bc', """A -> C
-B -> A
-COM -> B
-C -> A
-ADD -> #"""],
-    'MUL': "TODO",
-    'DIV': "TODO",
-    'MOD': "TODO",
-    # TODO: 32bit arithmetic
-    # binary operations
-    'NOT': ['b', """A -> B
-NOR -> #"""],
-    'OR': ['ab', """NOR -> A B
-NOR -> #"""],
-    # TODO: any capital will have to be stored always, but never restored
-    'AND': ['aBc', """A -> B
-NOR -> C
-*RSB
-B -> A
-NOR -> B
-C -> A
-NOR -> #"""],
-    # TODO: don't restore read-from-bus-reg
-    # TODO: check if first construct already contains neccessary keep instructions
-    'XOR': ['abc', """*AND[keep=A B] -> C
-NOR -> A
-C -> B
-NOR -> #
-"""],
-    'ASL': "TODO",
-    'ROL': "TODO",
-    'ASR': "TODO",
-    'ROR': "TODO",
-    # stack
-    'PUSH': ['ab', """0xFF -> RAM_P
-RAM -> RAM_P
-# -> RAM
--1 -> A
-RAM_P -> B
-0xFF -> RAM_P
-ADD -> RAM"""],
-    'POP': ['', """0xFF -> RAM_P
-*INC[keep=A B]
-RAM -> RAM_P
-RAM -> #"""],
-    # jumps
-    # TODO: adjust 10
-    # TODO: insert RSA, RSB between two code strings
-    # TODO: restore instructions for write-to-bus-reg if input flag # is in second code and write-to-bus-reg has been overwritten
-    'JSR': ['AB', """25 -> A
-PC -> B
-ADD -> *PUSH""", """# -> PC"""],
-    'RTS': ['', """*POP[keep=A B] -> PC"""],
+fallback_contructs = {
+    "*STA": "0x11 -> RAM_P; A -> RAM",
+    "*RSA": "0x11 -> RAM_P; RAM -> A",
+    "*STB": "0x12 -> RAM_P; B -> RAM",
+    "*RSA": "0x12 -> RAM_P; RAM -> B",
+    "*STC": "0x13 -> RAM_P; C -> RAM",
+    "*RSA": "0x13 -> RAM_P; RAM -> C",
 }
 
-print(asm_default_extras)
+# for store/restore calls, try finding def of STA,RSA,... after all includes else search in fallback (above) else panic
 
-# JSR might look like
+# TODO: never restore read-from-bus-reg (param)
+# TODO: restore instructions for write-to-bus-reg if input flag * is after !RS and write-to-bus-reg in temp (write-to-bus-reg for ADD/NOR is "A B" and COM "A")
+# TODO: insert RSA, RSB at !RS
+
+# i think this is irrelevant:
+    # TODO: check if parent construct already contains neccessary keep instructions (could be done by optimization)
+    # TODO: PUSH calls DEC (temp=A B), check for this
+
 """
-01 00 00
-62
-05 00 ff
-45
-a4
-01 ff ff
-52
-05 00 ff
-a4
-05 00 11
-14
-05 00 12
-24
-06 88 88
-HERE
+def build_construct (code index or virtual (nested) raw construct call -> syntax (code/construct definition) to instances)
+var reg_invalidated (can be set by self or nested construct [correction: i think only self])
+var reg_restore (can be set by call, definition, nested definition?)
+-> construct_context
+-> sum length of all instances (instruction/construct calls) in construct definition (you could just append to assembly output and count instructions)
+-> resolve construct calls during preprocessing (output assembly)
+-> construct definition file (included like header file)
 """
 
 # ; as \n
 # label:
 # "label" -> PC
+# label_[x]:
+# "label_[x+1]"
 # number parsing:
 # decimal signed
 # hexadecimal 0x octal 0o binary 0b -> count bits (may have zeropage addressing)
 
 # bus writing stuff (A -> B)
-# // comments
+# # comments
+# * params
 # literals (complicated int parsing)
 # labels (pre-compile with placeholders, mark indices and corresponding label)
 # constructs
 #  check if input or output or none (warning logs)
 #  store/restore based on rules (do we need to keep it? do we need to restore it? where?)
+# optimize .ha before export by simulating runtime register values (constant/register -> known, ADD/COM/NOR -> unknown) and removing second write, disable by option -> WATCH OUT FOR JUMPS (simply reset at labels?)
+# disassembler for analysing results
+
+# .ha syntax highlighting (auto-complete would be very nice)
 
 if f_path is None:
     state = None
