@@ -168,9 +168,9 @@ var reg_restore (can be set by call, definition, nested definition?)
 """
 
 # ; as \n
-# label:
+# "label":
 # "label" -> PC
-# label_[x]:
+# "label_[x]":
 # "label_[x+1]"
 # number parsing:
 # decimal signed
@@ -184,7 +184,7 @@ var reg_restore (can be set by call, definition, nested definition?)
 # constructs
 #  check if input or output or none (warning logs)
 #  store/restore based on rules (do we need to keep it? do we need to restore it? where?)
-# optimize .ha before export by simulating runtime register values (constant/register -> known, ADD/COM/NOR -> unknown) and removing second write, disable by option -> WATCH OUT FOR JUMPS (simply reset at labels?)
+# optimize .ha before export by simulating runtime register values (constant/register -> known, ADD/COM/NOR -> unknown) and removing second write, disable by option -> WATCH OUT FOR JUMPS (simply reset to unknown state at labels?)
 # disassembler for analysing results
 
 # .ha syntax highlighting (auto-complete would be very nice)

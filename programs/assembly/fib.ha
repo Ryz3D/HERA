@@ -75,43 +75,48 @@
 # 34        # y = C
 # 06 00 51  # "loop" -> PC
 
-main:
-    0x1001 -> RAM_P
-    1 -> RAM
-    0x1002 -> RAM_P
-    1 -> RAM
-loop:
-    0x1002 -> RAM_P
-    RAM -> A
-    0x0200 -> RAM_P
-    A -> RAM
-    0x1001 -> RAM_P
-    RAM -> A
-    0x1002 -> RAM_P
-    RAM -> B
-    ADD -> C
-    0x1001 -> RAM_P
-    B -> RAM
-    0x1002 -> RAM_P
-    C -> RAM
-    "loop" -> PC
+# !keep_all # implicitly keep A B C RP registers when calling def
+# !no_opti # disable optimization by simulation
+
+inc defaults.ha
+
+"main":
+    0x1001 -> RAM_P;
+    1 -> RAM;
+    0x1002 -> RAM_P;
+    1 -> RAM;
+"loop":
+    0x1002 -> RAM_P;
+    RAM -> A;
+    0x0200 -> RAM_P;
+    A -> RAM;
+    0x1001 -> RAM_P;
+    RAM -> A;
+    0x1002 -> RAM_P;
+    RAM -> B;
+    ADD -> C;
+    0x1001 -> RAM_P;
+    B -> RAM;
+    0x1002 -> RAM_P;
+    C -> RAM;
+    "loop" -> PC;
 
 # OPTIMIZATION
 # main:
-#     0x1001 -> RAM_P
-#     1 -> RAM
-#     0x1002 -> RAM_P
-#     1 -> RAM
+#     0x1001 -> RAM_P;
+#     1 -> RAM;
+#     0x1002 -> RAM_P;
+#     1 -> RAM;
 # loop:
-#     RAM -> A          # always at 0x1002
-#     0x0200 -> RAM_P
-#     A -> RAM
-#     0x1002 -> RAM_P
-#     RAM -> B
-#     0x1001 -> RAM_P
-#     RAM -> A
-#     ADD -> C
-#     B -> RAM          # always at 0x1001
-#     0x1002 -> RAM_P
-#     C -> RAM
-#     "loop" -> PC
+#     RAM -> A;          # always at 0x1002
+#     0x0200 -> RAM_P;
+#     A -> RAM;
+#     0x1002 -> RAM_P;
+#     RAM -> B;
+#     0x1001 -> RAM_P;
+#     RAM -> A;
+#     ADD -> C;
+#     B -> RAM;          # always at 0x1001
+#     0x1002 -> RAM_P;
+#     C -> RAM;
+#     "loop" -> PC;
