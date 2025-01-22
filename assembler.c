@@ -4,10 +4,41 @@
 #include <stdio.h>
 #include <string.h>
 
+// size of buffer for source code in bytes
 #define SRC_BUF_SIZE_INITIAL 5000
 #define SRC_BUF_SIZE_INCREMENT 1000
 
 typedef uint32_t index_t;
+
+char *read_src(char *path) {
+    FILE *f_src = fopen(path, "r");
+
+    index_t src_buf_size = SRC_BUF_SIZE_INITIAL;
+    char *src_buf = malloc(src_buf_size * sizeof(char));
+    if (src_buf == NULL) {
+        fclose(f_src);
+        printf("ERROR: inital source buffer allocation failed (%i chars * %i bytes/char)\r\n", src_buf_size, sizeof(char));
+        return NULL;
+    }
+    index_t src_i = 0;
+    while (fread((void *)(src_buf + src_i), sizeof(char), 1, f_src)) {
+        if (src_i >= src_buf_size - 1) {
+            src_buf_size += SRC_BUF_SIZE_INCREMENT;
+            src_buf = realloc(src_buf, src_buf_size * sizeof(char));
+
+            if (src_buf == NULL) {
+                fclose(f_src);
+                printf("ERROR: source buffer reallocation failed (%i chars * %i bytes/char)\r\n", src_buf_size, sizeof(char));
+                return NULL;
+            }
+        }
+        src_i++;
+    }
+    src_buf[src_i] = '\0';
+    fclose(f_src);
+
+    return src_buf;
+}
 
 typedef enum token_type {
     TOKEN_UNKNOWN,
@@ -15,6 +46,7 @@ typedef enum token_type {
     TOKEN_BUS,           // ->
     TOKEN_SEMICOLON,     // ;
     TOKEN_COLON,         // :
+    TOKEN_COMMA,         // ,
     TOKEN_PARAM,         // *
     TOKEN_EQUALS,        // =
     TOKEN_EXCLAM,        // !
@@ -35,48 +67,14 @@ typedef enum token_type {
     TOKEN_KEYWORD_DEF,   // def
 } token_type_t;
 
-typedef struct {
+typedef struct token {
     token_type_t type;
     index_t start, end;  // incl. start, excl. end
 } token_t;
 
-typedef struct {
+typedef struct tokenizer_state {
     index_t i;
 } tokenizer_state_t;
-
-char *read_src(char *path) {
-    FILE *f_src = fopen(path, "r");
-
-    index_t src_buf_size = SRC_BUF_SIZE_INITIAL;
-    char *src_buf = malloc(src_buf_size * sizeof(char));
-    if (src_buf == NULL) {
-        fclose(f_src);
-        printf("ERROR: inital source buffer allocation failed (%i chars * %i bytes/char)\r\n", src_buf_size, sizeof(char));
-        return NULL;
-    }
-    index_t src_i = 0;
-    while (fread((void *)(src_buf + src_i), sizeof(char), 1, f_src)) {
-        if (src_i >= src_buf_size - 1) {
-            // this is pretty much the behaviour of realloc. oh well.
-            char *src_buf_next = malloc((src_buf_size + SRC_BUF_SIZE_INCREMENT) * sizeof(char));
-            if (src_buf_next == NULL) {
-                free(src_buf);
-                fclose(f_src);
-                printf("ERROR: source buffer allocation failed (%i chars * %i bytes/char)\r\n", src_buf_size + SRC_BUF_SIZE_INCREMENT, sizeof(char));
-                return NULL;
-            }
-            memcpy(src_buf_next, src_buf, src_buf_size);
-            free(src_buf);
-            src_buf_size += SRC_BUF_SIZE_INCREMENT;
-            src_buf = src_buf_next;
-        }
-        src_i++;
-    }
-    src_buf[src_i] = '\0';
-    fclose(f_src);
-
-    return src_buf;
-}
 
 void asm_tokenize_init(tokenizer_state_t *state) {
     state->i = 0;
@@ -114,6 +112,9 @@ retry_tokenize:
     } else if (src[state->i] == ':') {
         // :
         RETURN_TOKEN_WITH_LENGTH(1, TOKEN_COLON);
+    } else if (src[state->i] == ',') {
+        // ,
+        RETURN_TOKEN_WITH_LENGTH(1, TOKEN_COMMA);
     } else if (src[state->i] == '=') {
         // =
         RETURN_TOKEN_WITH_LENGTH(1, TOKEN_EQUALS);
@@ -299,6 +300,242 @@ void asm_token_debug_print(token_t *token, char *src) {
     }
 }
 
+// inc only at top of file (bool inc_done)
+// normal context:
+//   bus write: keyword/s_keyword, param, literals (b, o, d, x), label
+//   bus
+//   bus read: everything but literals and labels
+//   ;
+
+typedef uint16_t ast_index_t;
+
+typedef enum ast_type {
+    AST_UNKNOWN,
+    AST_ROOT,
+    AST_CONTENT,        // token as string content
+    AST_INC,            // inc defaults.ha
+    AST_DEF,            // def *AND {
+    AST_DEF_CONFIG,     // def *AND[temp=A B] {
+    AST_INSTRUCTION,    // A -> B
+    AST_LABEL,          // "main":
+    AST_ASM_DIRECTIVE,  // !RS
+} ast_type_t;
+
+typedef struct ast_element {
+    ast_type_t type;
+    token_t content_token;
+    struct ast_element *children;
+    ast_index_t children_count;
+} ast_element_t;
+
+typedef struct parser_state {
+    ast_element_t root;
+    ast_element_t *current_context;
+    token_t current_token, next_token;
+    bool inc_done;
+    char *src;
+    tokenizer_state_t tokenizer_state;
+} parser_state_t;
+
+void asm_parse_element_init(ast_element_t *element) {
+    element->type = AST_UNKNOWN;
+    element->content_token.type = TOKEN_UNKNOWN;
+    element->children = NULL;
+    element->children_count = 0;
+}
+
+ast_element_t *asm_parse_add_child(ast_element_t *element) {
+    element->children_count++;
+    element->children = realloc(element->children, element->children_count * sizeof(ast_element_t));
+    if (element->children == NULL) {
+        printf("ERROR: AST reallocation failed\r\n");
+        return NULL;
+    }
+    ast_element_t *child = &element->children[element->children_count - 1];
+    asm_parse_element_init(child);
+    return child;
+}
+
+void asm_parse_init(parser_state_t *state, char *src) {
+    asm_parse_element_init(&state->root);
+    state->root.type = AST_ROOT;
+    state->current_context = &state->root;
+    state->inc_done = false;
+    state->src = src;
+
+    asm_tokenize_init(&state->tokenizer_state);
+}
+
+#define ERR() printf("err?\r\n");
+
+void asm_parse_instruction(parser_state_t *state) {
+    ast_element_t *ast_ins = asm_parse_add_child(state->current_context);
+    ast_ins->type = AST_INSTRUCTION;
+    ast_element_t *ast_bus_write = asm_parse_add_child(ast_ins);
+    ast_bus_write->type = AST_CONTENT;
+    ast_bus_write->content_token = state->current_token;
+
+    // assumption: only a single bus write token
+    // TODO: except if plus/minus followed by a literal
+    // TODO: except if current_token is TOKEN_STAR_KEYWORD and next token is TOKEN_OPEN_S (add def config as AST_CONTENT children)
+
+    state->current_token = asm_tokenize(&state->tokenizer_state, state->src);
+    while (state->current_token.type != TOKEN_SEMICOLON && state->current_token.type != TOKEN_END) {
+        ast_element_t *ast_bus_read = asm_parse_add_child(ast_ins);
+        ast_bus_read->type = AST_CONTENT;
+        ast_bus_read->content_token = state->current_token;
+
+        state->current_token = asm_tokenize(&state->tokenizer_state, state->src);
+    }
+
+    if (state->current_token.type != TOKEN_SEMICOLON) {
+        ERR();
+    }
+}
+
+ast_element_t asm_parse(char *src) {
+    parser_state_t state;
+    asm_parse_init(&state, src);
+
+    state.current_token = asm_tokenize(&state.tokenizer_state, state.src);
+    state.next_token = asm_tokenize(&state.tokenizer_state, state.src);
+
+    while (state.next_token.type != TOKEN_END) {
+        if (state.current_token.type != TOKEN_KEYWORD_INC) {
+            state.inc_done = true;
+        }
+
+        switch (state.current_token.type) {
+            case TOKEN_KEYWORD:
+            case TOKEN_STAR_KEYWORD:
+            case TOKEN_PARAM:
+            case TOKEN_PLUS:
+            case TOKEN_MINUS:
+            case TOKEN_LITERAL_b:
+            case TOKEN_LITERAL_o:
+            case TOKEN_LITERAL_d:
+            case TOKEN_LITERAL_x:
+                if (state.next_token.type == TOKEN_BUS) {
+                    // instruction
+                    asm_parse_instruction(&state);
+                } else {
+                    ERR();
+                }
+                break;
+            case TOKEN_LABEL:
+                if (state.next_token.type == TOKEN_COLON) {
+                    // label definition (AST_LABEL)
+                    ast_element_t *ast_label = asm_parse_add_child(state.current_context);
+                    ast_label->type = AST_LABEL;
+                    ast_label->content_token = state.current_token;
+                } else if (state.next_token.type == TOKEN_BUS) {
+                    // label jump (AST_INSTRUCTION)
+                    asm_parse_instruction(&state);
+                }
+                break;
+            case TOKEN_EXCLAM:
+                // TODO: directive (ended by TOKEN_SEMICOLON)
+                break;
+            case TOKEN_KEYWORD_INC:
+                if (!state.inc_done) {
+                    ast_element_t *ast_inc = asm_parse_add_child(state.current_context);
+                    ast_inc->type = AST_INC;
+                    ast_inc->content_token = state.next_token;
+                } else {
+                    ERR();
+                }
+                break;
+            case TOKEN_KEYWORD_DEF:
+                if (state.current_context == &state.root) {
+                    ast_element_t *ast_def = asm_parse_add_child(state.current_context);
+                    ast_def->type = AST_DEF;
+                    ast_def->content_token = state.next_token;
+                    // TODO: add some def stuff (def config, ended by open_c)
+                    state.current_context = ast_def;
+                } else {
+                    ERR();
+                }
+                break;
+            case TOKEN_CLOSE_C:
+                if (state.current_context != &state.root) {
+                    state.current_context = &state.root;
+                } else {
+                    ERR();
+                }
+                break;
+        }
+
+        state.current_token = asm_tokenize(&state.tokenizer_state, state.src);
+        state.next_token = asm_tokenize(&state.tokenizer_state, state.src);
+    }
+
+    return state.root;
+}
+
+void asm_parse_free_ast(ast_element_t *ast) {
+    for (ast_index_t i = 0; i < ast->children_count; i++) {
+        asm_parse_free_ast(&ast->children[i]);
+    }
+    if (ast->children != NULL) {
+        free(ast->children);
+    }
+}
+
+void asm_parse_debug_print(ast_element_t *ast, char *src, int level) {
+    for (int s = 0; s < level; s++)
+        printf("  ");
+    printf("type: ");
+    switch (ast->type) {
+        case AST_ROOT:
+            printf("AST_ROOT");
+            break;
+        case AST_CONTENT:
+            printf("AST_CONTENT");
+            break;
+        case AST_INC:
+            printf("AST_INC");
+            break;
+        case AST_DEF:
+            printf("AST_DEF");
+            break;
+        case AST_DEF_CONFIG:
+            printf("AST_DEF_CONFIG");
+            break;
+        case AST_INSTRUCTION:
+            printf("AST_INSTRUCTION");
+            break;
+        case AST_LABEL:
+            printf("AST_LABEL");
+            break;
+        case AST_ASM_DIRECTIVE:
+            printf("AST_ASM_DIRECTIVE");
+            break;
+        case AST_UNKNOWN:
+        default:
+            printf("?");
+            break;
+    }
+    printf(" (%i)\r\n", ast->type);
+
+    if (ast->content_token.type != TOKEN_UNKNOWN) {
+        for (int s = 0; s < level; s++)
+            printf("  ");
+        printf("content_token: ");
+        asm_token_debug_print(&ast->content_token, src);
+    }
+
+    for (int s = 0; s < level; s++)
+        printf("  ");
+    printf("children_count: %i\r\n", ast->children_count);
+
+    for (ast_index_t i = 0; i < ast->children_count; i++) {
+        for (int s = 0; s < level; s++)
+            printf("  ");
+        printf("child (%i):\r\n", i);
+        asm_parse_debug_print(&ast->children[i], src, level + 1);
+    }
+}
+
 int main(int argc, char *argv[]) {
     char *src_path;
     if (argc > 1) {
@@ -314,18 +551,9 @@ int main(int argc, char *argv[]) {
     }
     printf("read source file \"%s\"\r\n", src_path);
 
-    tokenizer_state_t tokenizer_state;
-
-    asm_tokenize_init(&tokenizer_state);
-
-    token_t current_token = {
-        .type = TOKEN_UNKNOWN,
-    };
-    while (current_token.type != TOKEN_END) {
-        current_token = asm_tokenize(&tokenizer_state, src_buf);
-        asm_token_debug_print(&current_token, src_buf);
-        printf(" ");
-    }
+    ast_element_t ast = asm_parse(src_buf);
+    asm_parse_debug_print(&ast, src_buf, 0);
+    asm_parse_free_ast(&ast);
 
     free(src_buf);
 
