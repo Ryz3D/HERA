@@ -78,7 +78,7 @@
 # !keep_all # implicitly keep A B C RP registers when calling def
 # !no_opti # disable optimization by simulation
 
-inc defaults.ha
+inc defaults.ha;
 
 "main":
     0x1001 -> RAM_P;
