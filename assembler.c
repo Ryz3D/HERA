@@ -387,19 +387,17 @@ bool asm_parse_instruction(parser_state_t *state) {
         // +/-
         asm_parse_add_content_child(ast_bus_write, state->current_token);
         // literal
-        state->current_token = asm_tokenize(&state->tokenizer_state, state->src);
-        asm_parse_add_content_child(ast_bus_write, state->current_token);
+        asm_parse_add_content_child(ast_bus_write, state->next_token);
 
-        if (state->current_token.type != TOKEN_LITERAL_b &&
-            state->current_token.type != TOKEN_LITERAL_o &&
-            state->current_token.type != TOKEN_LITERAL_d &&
-            state->current_token.type != TOKEN_LITERAL_x) {
+        if (state->next_token.type != TOKEN_LITERAL_b &&
+            state->next_token.type != TOKEN_LITERAL_o &&
+            state->next_token.type != TOKEN_LITERAL_d &&
+            state->next_token.type != TOKEN_LITERAL_x) {
             return false;
         }
     } else if (state->current_token.type == TOKEN_STAR_KEYWORD) {
         // *ABC
         asm_parse_add_content_child(ast_bus_write, state->current_token);
-
         state->current_token = asm_tokenize(&state->tokenizer_state, state->src);
 
         // check for TOKEN_OPEN_S (add call config as AST_CONTENT children)
@@ -458,7 +456,7 @@ ast_element_t asm_parse(char *src) {
                     ASM_PARSE_ERR("bad instruction 1");
                 }
                 break;
-            case TOKEN_LABEL:
+            case TOKEN_LABEL: {
                 if (state.next_token.type == TOKEN_COLON) {
                     // label definition (AST_LABEL)
                     ast_element_t *ast_label = asm_parse_add_child(state.current_context);
@@ -473,14 +471,20 @@ ast_element_t asm_parse(char *src) {
                     ASM_PARSE_ERR("label not followed by colon or bus");
                 }
                 break;
-            case TOKEN_EXCLAM:
-                // TODO: directive (ended by TOKEN_SEMICOLON)
+            }
+            case TOKEN_EXCLAM: {
+                ast_element_t *ast_directive = asm_parse_add_child(state.current_context);
+                ast_directive->type = AST_ASM_DIRECTIVE;
+
                 while (state.next_token.type != TOKEN_SEMICOLON && state.next_token.type != TOKEN_END) {
+                    asm_parse_add_content_child(ast_directive, state.next_token);
+
                     state.current_token = state.next_token;
                     state.next_token = asm_tokenize(&state.tokenizer_state, state.src);
                 }
                 break;
-            case TOKEN_KEYWORD_INC:
+            }
+            case TOKEN_KEYWORD_INC: {
                 if (!state.inc_done) {
                     ast_element_t *ast_inc = asm_parse_add_child(state.current_context);
                     ast_inc->type = AST_INC;
@@ -494,7 +498,8 @@ ast_element_t asm_parse(char *src) {
                     ASM_PARSE_ERR("no more inc");
                 }
                 break;
-            case TOKEN_KEYWORD_DEF:
+            }
+            case TOKEN_KEYWORD_DEF: {
                 if (state.current_context == &state.root) {
                     ast_element_t *ast_def = asm_parse_add_child(state.current_context);
                     ast_def->type = AST_DEF;
@@ -511,6 +516,7 @@ ast_element_t asm_parse(char *src) {
                     ASM_PARSE_ERR("nested def");
                 }
                 break;
+            }
             case TOKEN_CLOSE_C:
                 if (state.current_context != &state.root) {
                     state.current_context = &state.root;
@@ -622,7 +628,7 @@ int main(int argc, char *argv[]) {
     printf("read source file \"%s\"\r\n", src_path);
 
     ast_element_t ast = asm_parse(src_buf);
-    asm_parse_debug_print(&ast, src_buf, 0);
+    // asm_parse_debug_print(&ast, src_buf, 0);
     asm_parse_free_ast(&ast);
 
     free(src_buf);
