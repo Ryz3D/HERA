@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DEBUG 1
-#define DEFAULT_SRC "./defaults.ha"
+#define DEBUG 0
+
+const char *default_src = "./defaults.ha";
 
 typedef uint32_t index_t;
 
@@ -226,7 +227,7 @@ void asm_token_print_position(token_t *token, char *src) {
             col = 1;
         }
     }
-    printf("(line %i:%i)", line, col);
+    printf("(line %u:%u)", line, col);
 }
 
 void asm_token_content_print(token_t *token, char *src) {
@@ -696,8 +697,193 @@ void asm_parse_debug_print(ast_element_t *ast, char *src, int level) {
     }
 }
 
+typedef enum ins_bus_w {
+    W_INVALID = 0x10,
+    W_LABEL = 0x11,
+    W_LIT = 0x0,
+    W_A = 0x1,
+    W_B = 0x2,
+    W_C = 0x3,
+    W_RAM = 0x4,
+    W_RP = 0x5,
+    W_PC = 0x6,
+    W_STAT = 0x7,
+    W_ADD = 0xA,
+    W_COM = 0xB,
+    W_NOR = 0xC,
+} ins_bus_w_t;
+
+typedef enum ins_bus_r {
+    R_INVALID = 0x10,
+    R_VOID = 0x0,
+    R_A = 0x1,
+    R_B = 0x2,
+    R_C = 0x3,
+    R_RAM = 0x4,
+    R_RP = 0x5,
+    R_PC = 0x6,
+    R_STAT = 0x7,
+    R_A_B = 0xA,
+    R_B_RP = 0xB,
+    R_C_PC = 0xC,
+    R_PC_C = 0xD,
+    R_PC_Z = 0xE,
+    R_PC_N = 0xF,
+} ins_bus_r_t;
+
+typedef struct instruction {
+    ins_bus_w_t bus_w;
+    ins_bus_r_t bus_r;
+    char *label;
+    char *bus_w_label;
+    uint16_t literal;
+    token_t ref_token;
+} instruction_t;
+
+void ins_init(instruction_t *ins) {
+    ins->bus_w = W_INVALID;
+    ins->bus_r = R_INVALID;
+    ins->label = NULL;
+    ins->bus_w_label = NULL;
+    ins->literal = 0;
+}
+
+uint8_t ins_to_binary(instruction_t *ins) {
+    if (ins->bus_w == W_INVALID || ins->bus_r == R_INVALID) {
+        printf("invalid instruction");
+        goto ins_errinfo;
+    }
+    if (ins->bus_w == W_LABEL && ins->bus_w_label == NULL) {
+        if (ins->bus_w_label == NULL) {
+            printf("instruction missing w_label");
+        } else {
+            printf("instruction has unresolved w_label");
+        }
+        goto ins_errinfo;
+    }
+    return (((uint8_t)ins->bus_w & 0xF) << 4) | ((uint8_t)ins->bus_r & 0xF);
+
+ins_errinfo:
+    printf(" (0x%02X -> 0x%02X)", ins->bus_w, ins->bus_r);
+    if (ins->label != NULL) {
+        printf(" (label %s)", ins->label);
+    }
+    printf("\r\n");
+    return 0x99;
+}
+
+void ins_resolve_labels(instruction_t *ins, index_t ins_count, char *src) {
+    for (index_t i = 0; i < ins_count; i++) {
+        if (ins[i].bus_w == W_LABEL) {
+            for (index_t search_i = 0; search_i < ins_count; search_i++) {
+                if (strcmp(ins[i].bus_w_label, ins[search_i].label) == 0) {
+                    ins[i].bus_w = W_LIT;
+                    ins[i].literal = search_i;
+                    break;
+                }
+            }
+            if (ins[i].bus_w != W_LIT) {
+                asm_token_print_position(&ins[i].ref_token, src);
+                printf(" can't resolve label \"%s\"\r\n", ins[i].bus_w_label);
+            }
+        }
+    }
+}
+
+instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
+    if (ast_element->type != AST_INSTRUCTION || ast_element->children_count != 2) {
+        printf("ins_from_ast: incorrect AST type %i\r\n", ast_element->type);
+        return (instruction_t){
+            .bus_w = W_INVALID,
+            .bus_r = R_INVALID,
+            .bus_w_label = NULL,
+            .label = NULL,
+            .literal = 0,
+            .ref_token = { .type = TOKEN_UNKNOWN, .start = 0, .end = 0 },
+        };
+    }
+
+    ast_element_t *ast_bus_w = NULL;
+    ast_element_t *ast_bus_r = NULL;
+    for (index_t i = 0; i < ast_element->children_count; i++) {
+        if (ast_element->children[i].type == AST_INS_BUS_WRITE) {
+            ast_bus_w = &ast_element->children[i];
+            if (ast_bus_r != NULL) {
+                break;
+            }
+        } else if (ast_element->children[i].type == AST_INS_BUS_READ) {
+            ast_bus_r = &ast_element->children[i];
+            if (ast_bus_w != NULL) {
+                break;
+            }
+        }
+    }
+    if (ast_bus_r == NULL || ast_bus_r->children_count == 0 ||
+        ast_bus_w == NULL || ast_bus_w->children_count == 0) {
+        printf("ins_from_ast: missing AST_INS_BUS_WRITE and/or AST_INS_BUS_READ in %u children\r\n", ast_element->children_count);
+        return (instruction_t){
+            .bus_w = W_INVALID,
+            .bus_r = R_INVALID,
+            .bus_w_label = NULL,
+            .label = NULL,
+            .literal = 0,
+            .ref_token = { .type = TOKEN_UNKNOWN, .start = 0, .end = 0 },
+        };
+    }
+
+    instruction_t ins = {
+        .bus_w = W_INVALID,
+        .bus_r = R_INVALID,
+        .bus_w_label = NULL,
+        .label = NULL,
+        .literal = 0,
+        .ref_token = ast_bus_w->children[0].content_token,
+    };
+
+    switch (ast_bus_w->children[0].type) {
+        case AST_CONTENT:
+            for (index_t i = 0; i < ast_bus_w->children_count; i++) {
+                printf("w_content: ");
+                asm_token_content_print(&ast_bus_w->children[i].content_token, src);
+                printf(" ");
+            }
+            printf("\r\n");
+            // TODO: strcmp against content token(s) -> check for multiple ast_bus_w children like "A B"
+            // TODO: literal parser
+            // TODO: set ins.line & ins.col based on content_token
+            break;
+        case AST_LABEL:
+            // TODO: copy label to ins.bus_w_label
+            break;
+        case AST_DEF_CALL:
+            // TODO: error
+            break;
+        default:
+            // TODO: error
+            break;
+    }
+    switch (ast_bus_r->children[0].type) {
+        case AST_CONTENT:
+            for (index_t i = 0; i < ast_bus_r->children_count; i++) {
+                printf("r_content: ");
+                asm_token_content_print(&ast_bus_r->children[i].content_token, src);
+                printf(" ");
+            }
+            printf("\r\n");
+            // TODO: strcmp against content token(s)
+            break;
+        case AST_DEF_CALL:
+            // TODO: error
+            break;
+        default:
+            // TODO: error
+            break;
+    }
+    return ins;
+}
+
 int main(int argc, char *argv[]) {
-    char *src_path = DEFAULT_SRC;
+    char *src_path = (char *)default_src;
 
 #if !DEBUG
     if (argc > 1) {
@@ -712,10 +898,57 @@ int main(int argc, char *argv[]) {
     }
 
     ast_element_t ast = asm_parse(src_buf);
-    // TODO: parse success message
     asm_parse_debug_print(&ast, src_buf, 0);
-    asm_parse_free_ast(&ast);
 
+    // TODO: parse def's, replace def calls (could the children pointer be bent (reused) from def children to call children?)
+    // now the AST should be flat and include only labels and instructions
+
+    instruction_t *instructions = NULL;
+    index_t instructions_count = 0;
+    for (ast_index_t i = 0; i < ast.children_count; i++) {
+        if (ast.children[i].type == AST_INSTRUCTION) {
+            instructions_count++;
+            instructions = realloc(instructions, instructions_count * sizeof(instruction_t));
+            if (instructions == NULL) {
+                printf("out of memory during instruction allocation\r\n");
+                return 1;
+            }
+            instructions[instructions_count - 1] = ins_from_ast(&ast.children[i], src_buf);
+        }
+    }
+    ins_resolve_labels(instructions, instructions_count, src_buf);
+    uint8_t *binary = NULL;
+    index_t binary_size = 0;
+    for (index_t i = 0; i < instructions_count; i++) {
+        binary_size += instructions[i].bus_w == W_LIT ? 3 : 1;
+        binary = realloc(binary, binary_size);
+        if (binary == NULL) {
+            printf("out of memory during binary allocation\r\n");
+            return 1;
+        }
+        uint8_t bin = ins_to_binary(&instructions[i]);
+        binary[binary_size - (instructions[i].bus_w == W_LIT ? 3 : 1)] = bin;
+        if (bin != 0x99) {
+            printf("0x%02X", bin);
+        }
+        if (instructions[i].bus_w == W_LIT) {
+            if (bin != 0x99) {
+                binary[binary_size - 2] = instructions[i].literal >> 8;
+                binary[binary_size - 1] = instructions[i].literal & 0xFF;
+                printf(" 0x%04X", instructions[i].literal);
+            } else {
+                binary[binary_size - 2] = 0x00;
+                binary[binary_size - 1] = 0x00;
+            }
+        }
+        if (bin != 0x99) {
+            printf("\r\n");
+        }
+    }
+
+    asm_parse_free_ast(&ast);
+    free(instructions);
+    free(binary);
     free(src_buf);
 
     return 0;
