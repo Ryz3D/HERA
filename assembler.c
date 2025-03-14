@@ -4,9 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DEBUG 0
+#define DEBUG 1
 
-const char *default_src = "./defaults.ha";
+// const char *default_src = "./defaults.ha";
+const char *default_src = "./programs/assembly/fib.ha";
 
 typedef uint32_t index_t;
 
@@ -236,6 +237,17 @@ void asm_token_content_print(token_t *token, char *src) {
     }
 }
 
+char *asm_token_get_content(token_t *token, char *src) {
+    char *content = malloc((token->end - token->start + 1) * sizeof(char));
+    if (content == NULL) {
+        printf("asm_token_get_content: out of memory\r\n");
+        return NULL;
+    }
+    memcpy(content, &src[token->start], token->end - token->start);
+    content[token->end - token->start] = '\0';
+    return content;
+}
+
 #define PRINT_TOKEN(type_name)           \
     printf("TOKEN: " type_name " (");    \
     asm_token_content_print(token, src); \
@@ -454,6 +466,10 @@ bool asm_parse_instruction(parser_state_t *state) {
         if (state->next_token.type == TOKEN_SEMICOLON) {
             return true;
         }
+    } else if (state->current_token.type == TOKEN_LABEL) {
+        ast_element_t *ast_child = asm_parse_add_child(&ast_ins->children[0]);
+        ast_child->type = AST_LABEL;
+        ast_child->content_token = state->current_token;
     } else {
         // probably a keyword
         asm_parse_add_content_child(&ast_ins->children[0], state->current_token);
@@ -748,6 +764,18 @@ void ins_init(instruction_t *ins) {
     ins->literal = 0;
 }
 
+void ins_free(instruction_t *instructions, index_t instructions_count) {
+    for (index_t i = 0; i < instructions_count; i++) {
+        if (instructions[i].label != NULL) {
+            free(instructions[i].label);
+        }
+        if (instructions[i].bus_w_label != NULL) {
+            free(instructions[i].bus_w_label);
+        }
+    }
+    free(instructions);
+}
+
 uint8_t ins_to_binary(instruction_t *ins) {
     if (ins->bus_w == W_INVALID || ins->bus_r == R_INVALID) {
         printf("invalid instruction");
@@ -775,19 +803,72 @@ ins_errinfo:
 void ins_resolve_labels(instruction_t *ins, index_t ins_count, char *src) {
     for (index_t i = 0; i < ins_count; i++) {
         if (ins[i].bus_w == W_LABEL) {
+            index_t program_index = 0;
             for (index_t search_i = 0; search_i < ins_count; search_i++) {
-                if (strcmp(ins[i].bus_w_label, ins[search_i].label) == 0) {
-                    ins[i].bus_w = W_LIT;
-                    ins[i].literal = search_i;
-                    break;
+                if (ins[search_i].label != NULL) {
+                    if (strcmp(ins[i].bus_w_label, ins[search_i].label) == 0) {
+                        ins[i].bus_w = W_LIT;
+                        ins[i].literal = program_index;
+                        break;
+                    }
+                }
+                if (ins[search_i].bus_w == W_LIT || ins[search_i].bus_w == W_LABEL) {
+                    program_index += 3;
+                } else {
+                    program_index++;
                 }
             }
             if (ins[i].bus_w != W_LIT) {
+                ins[i].bus_w = W_INVALID;
                 asm_token_print_position(&ins[i].ref_token, src);
                 printf(" can't resolve label \"%s\"\r\n", ins[i].bus_w_label);
             }
         }
     }
+}
+
+uint16_t parse_literal(char *content, uint8_t base) {
+    if (base == 2 || base == 8 || base == 16) {
+        content += 2;
+    }
+    uint16_t res = 0;
+    while (*content != '\0') {
+        switch (base) {
+            case 2:
+                if (*content < '0' || *content > '1') {
+                    return res;
+                }
+                break;
+            case 8:
+                if (*content < '0' || *content > '8') {
+                    return res;
+                }
+                break;
+            case 10:
+                if (*content < '0' || *content > '9') {
+                    return res;
+                }
+                break;
+            case 16:
+                if ((*content < '0' || *content > '9') && (*content < 'a' || *content > 'f') && (*content < 'A' || *content > 'F')) {
+                    return res;
+                }
+                break;
+            break;
+            default:
+                break;
+        }
+        res *= base;
+        if (*content >= '0' && *content <= '9') {
+            res += *content - '0';
+        } else if (*content >= 'a' && *content <= 'f') {
+            res += *content - 'a' + 10;
+        } else if (*content >= 'A' && *content <= 'F') {
+            res += *content - 'A' + 10;
+        }
+        content++;
+    }
+    return res;
 }
 
 instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
@@ -820,7 +901,7 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
     }
     if (ast_bus_r == NULL || ast_bus_r->children_count == 0 ||
         ast_bus_w == NULL || ast_bus_w->children_count == 0) {
-        printf("ins_from_ast: missing AST_INS_BUS_WRITE and/or AST_INS_BUS_READ in %u children\r\n", ast_element->children_count);
+        printf("ins_from_ast: missing AST_INS_BUS_WRITE and/or AST_INS_BUS_READ\r\n");
         return (instruction_t){
             .bus_w = W_INVALID,
             .bus_r = R_INVALID,
@@ -841,42 +922,135 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
     };
 
     switch (ast_bus_w->children[0].type) {
-        case AST_CONTENT:
-            for (index_t i = 0; i < ast_bus_w->children_count; i++) {
-                printf("w_content: ");
-                asm_token_content_print(&ast_bus_w->children[i].content_token, src);
-                printf(" ");
+        case AST_CONTENT: {
+            char *content = asm_token_get_content(&ast_bus_w->children[0].content_token, src);
+            if (content == NULL) {
+                break;
             }
-            printf("\r\n");
-            // TODO: strcmp against content token(s) -> check for multiple ast_bus_w children like "A B"
-            // TODO: literal parser
-            // TODO: set ins.line & ins.col based on content_token
+            if (strcmp(content, "A") == 0) {
+                ins.bus_w = W_A;
+            } else if (strcmp(content, "B") == 0) {
+                ins.bus_w = W_B;
+            } else if (strcmp(content, "C") == 0) {
+                ins.bus_w = W_C;
+            } else if (strcmp(content, "RAM") == 0) {
+                ins.bus_w = W_RAM;
+            } else if (strcmp(content, "RAM_P") == 0) {
+                ins.bus_w = W_RP;
+            } else if (strcmp(content, "PC") == 0) {
+                ins.bus_w = W_PC;
+            } else if (strcmp(content, "STAT") == 0) {
+                ins.bus_w = W_STAT;
+            } else if (strcmp(content, "ADD") == 0) {
+                ins.bus_w = W_ADD;
+            } else if (strcmp(content, "COM") == 0) {
+                ins.bus_w = W_COM;
+            } else if (strcmp(content, "NOR") == 0) {
+                ins.bus_w = W_NOR;
+            } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_b) {
+                ins.bus_w = W_LIT;
+                ins.literal = parse_literal(content, 2);
+            } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_o) {
+                ins.bus_w = W_LIT;
+                ins.literal = parse_literal(content, 8);
+            } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_d) {
+                ins.bus_w = W_LIT;
+                ins.literal = content[0] == '-' ? -parse_literal(content + 1, 10) : parse_literal(content, 10);
+            } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_x) {
+                ins.bus_w = W_LIT;
+                ins.literal = parse_literal(content, 16);
+            } else {
+                printf("ERROR: unknown write-to-bus value\r\n");
+            }
+            free(content);
             break;
-        case AST_LABEL:
-            // TODO: copy label to ins.bus_w_label
+        }
+        case AST_LABEL: {
+            char *content = asm_token_get_content(&ast_bus_w->children[0].content_token, src);
+            if (content == NULL) {
+                break;
+            }
+            ins.bus_w = W_LABEL;
+            ins.bus_w_label = content;
             break;
-        case AST_DEF_CALL:
-            // TODO: error
+        }
+        case AST_DEF_CALL: {
+            // TODO
+            char *content = asm_token_get_content(&ast_bus_w->children[0].content_token, src);
+            if (content == NULL) {
+                break;
+            }
+            printf("call (WHICH IS NOT SUPPORTED): '%s' \r\n", content);
+            free(content);
             break;
+        }
         default:
-            // TODO: error
+            printf("ERROR: unknown write-to-bus value\r\n");
             break;
     }
     switch (ast_bus_r->children[0].type) {
-        case AST_CONTENT:
-            for (index_t i = 0; i < ast_bus_r->children_count; i++) {
-                printf("r_content: ");
-                asm_token_content_print(&ast_bus_r->children[i].content_token, src);
-                printf(" ");
+        case AST_CONTENT: {
+            if (ast_bus_r->children_count == 1) {
+                char *content = asm_token_get_content(&ast_bus_r->children[0].content_token, src);
+                if (content == NULL) {
+                    break;
+                }
+                if (strcmp(content, "VOID") == 0) {
+                    ins.bus_r = R_VOID;
+                } else if (strcmp(content, "A") == 0) {
+                    ins.bus_r = R_A;
+                } else if (strcmp(content, "B") == 0) {
+                    ins.bus_r = R_B;
+                } else if (strcmp(content, "C") == 0) {
+                    ins.bus_r = R_C;
+                } else if (strcmp(content, "RAM") == 0) {
+                    ins.bus_r = R_RAM;
+                } else if (strcmp(content, "RAM_P") == 0) {
+                    ins.bus_r = R_RP;
+                } else if (strcmp(content, "PC") == 0) {
+                    ins.bus_r = R_PC;
+                } else if (strcmp(content, "STAT") == 0) {
+                    ins.bus_r = R_STAT;
+                } else if (strcmp(content, "PC_C") == 0) {
+                    ins.bus_r = R_PC_C;
+                } else if (strcmp(content, "PC_Z") == 0) {
+                    ins.bus_r = R_PC_Z;
+                } else if (strcmp(content, "PC_N") == 0) {
+                    ins.bus_r = R_PC_N;
+                } else {
+                    printf("ERROR: unknown read-from-bus value\r\n");
+                }
+                free(content);
+            } else if (ast_bus_r->children_count == 2) {
+                char *content1 = asm_token_get_content(&ast_bus_r->children[0].content_token, src);
+                if (content1 == NULL) {
+                    break;
+                }
+                char *content2 = asm_token_get_content(&ast_bus_r->children[1].content_token, src);
+                if (content2 == NULL) {
+                    break;
+                }
+                if (strcmp(content1, "A") == 0 && strcmp(content2, "B") == 0) {
+                    ins.bus_r = R_A_B;
+                } else if (strcmp(content1, "B") == 0 && strcmp(content2, "RAM_P") == 0) {
+                    ins.bus_r = R_B_RP;
+                } else if (strcmp(content1, "C") == 0 && strcmp(content2, "PC") == 0) {
+                    ins.bus_r = R_C_PC;
+                } else {
+                    printf("ERROR: unknown read-from-bus value\r\n");
+                }
+                free(content1);
+                free(content2);
+            } else {
+                printf("ERROR: unknown read-from-bus value\r\n");
             }
-            printf("\r\n");
-            // TODO: strcmp against content token(s)
             break;
+        }
         case AST_DEF_CALL:
-            // TODO: error
+            // TODO
             break;
         default:
-            // TODO: error
+            printf("ERROR: unknown read-from-bus value\r\n");
             break;
     }
     return ins;
@@ -898,13 +1072,14 @@ int main(int argc, char *argv[]) {
     }
 
     ast_element_t ast = asm_parse(src_buf);
-    asm_parse_debug_print(&ast, src_buf, 0);
+    // asm_parse_debug_print(&ast, src_buf, 0);
 
     // TODO: parse def's, replace def calls (could the children pointer be bent (reused) from def children to call children?)
     // now the AST should be flat and include only labels and instructions
 
     instruction_t *instructions = NULL;
     index_t instructions_count = 0;
+    char *current_label = NULL;
     for (ast_index_t i = 0; i < ast.children_count; i++) {
         if (ast.children[i].type == AST_INSTRUCTION) {
             instructions_count++;
@@ -914,6 +1089,13 @@ int main(int argc, char *argv[]) {
                 return 1;
             }
             instructions[instructions_count - 1] = ins_from_ast(&ast.children[i], src_buf);
+            instructions[instructions_count - 1].label = current_label;
+            current_label = NULL;
+        } else if (ast.children[i].type == AST_LABEL) {
+            if (current_label != NULL) {
+                free(current_label);
+            }
+            current_label = asm_token_get_content(&ast.children[i].content_token, src_buf);
         }
     }
     ins_resolve_labels(instructions, instructions_count, src_buf);
@@ -946,8 +1128,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // TODO: output format
+
     asm_parse_free_ast(&ast);
-    free(instructions);
+    ins_free(instructions, instructions_count);
     free(binary);
     free(src_buf);
 
