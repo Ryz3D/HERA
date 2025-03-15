@@ -44,6 +44,26 @@ char *read_src(char *path) {
     return src_buf;
 }
 
+void write_bin(char *path, uint8_t *bin, index_t bin_size) {
+    printf("writing binary file \"%s\"... ", path);
+    FILE *f_bin = fopen(path, "wb");
+
+    if (f_bin == NULL) {
+        printf("ERROR: could not access binary file \"%s\"\r\n", path);
+        return;
+    }
+
+    index_t written = 0;
+    if ((written = fwrite(bin, 1, bin_size, f_bin)) != bin_size) {
+        fclose(f_bin);
+        printf("ERROR: binary file \"%s\" write failed (%i bytes)\r\n", path, written);
+        return;
+    }
+    fclose(f_bin);
+
+    printf("done.\r\n");
+}
+
 typedef enum token_type {
     TOKEN_UNKNOWN,
     TOKEN_END,           // EOF
@@ -240,7 +260,7 @@ void asm_token_content_print(token_t *token, char *src) {
 char *asm_token_get_content(token_t *token, char *src) {
     char *content = malloc((token->end - token->start + 1) * sizeof(char));
     if (content == NULL) {
-        printf("asm_token_get_content: out of memory\r\n");
+        printf("ERROR: out of memory in asm_token_get_content\r\n");
         return NULL;
     }
     memcpy(content, &src[token->start], token->end - token->start);
@@ -778,14 +798,14 @@ void ins_free(instruction_t *instructions, index_t instructions_count) {
 
 uint8_t ins_to_binary(instruction_t *ins) {
     if (ins->bus_w == W_INVALID || ins->bus_r == R_INVALID) {
-        printf("invalid instruction");
+        printf("ERROR: invalid instruction");
         goto ins_errinfo;
     }
     if (ins->bus_w == W_LABEL && ins->bus_w_label == NULL) {
         if (ins->bus_w_label == NULL) {
-            printf("instruction missing w_label");
+            printf("ERROR: instruction missing w_label");
         } else {
-            printf("instruction has unresolved w_label");
+            printf("ERROR: instruction has unresolved w_label");
         }
         goto ins_errinfo;
     }
@@ -821,7 +841,7 @@ void ins_resolve_labels(instruction_t *ins, index_t ins_count, char *src) {
             if (ins[i].bus_w != W_LIT) {
                 ins[i].bus_w = W_INVALID;
                 asm_token_print_position(&ins[i].ref_token, src);
-                printf(" can't resolve label \"%s\"\r\n", ins[i].bus_w_label);
+                printf(" ERROR: can't resolve label \"%s\"\r\n", ins[i].bus_w_label);
             }
         }
     }
@@ -873,7 +893,7 @@ uint16_t parse_literal(char *content, uint8_t base) {
 
 instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
     if (ast_element->type != AST_INSTRUCTION || ast_element->children_count != 2) {
-        printf("ins_from_ast: incorrect AST type %i\r\n", ast_element->type);
+        printf("ERROR: incorrect AST type %i for instruction\r\n", ast_element->type);
         return (instruction_t){
             .bus_w = W_INVALID,
             .bus_r = R_INVALID,
@@ -901,7 +921,7 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
     }
     if (ast_bus_r == NULL || ast_bus_r->children_count == 0 ||
         ast_bus_w == NULL || ast_bus_w->children_count == 0) {
-        printf("ins_from_ast: missing AST_INS_BUS_WRITE and/or AST_INS_BUS_READ\r\n");
+        printf("ERROR: missing AST_INS_BUS_WRITE and/or AST_INS_BUS_READ\r\n");
         return (instruction_t){
             .bus_w = W_INVALID,
             .bus_r = R_INVALID,
@@ -1067,13 +1087,14 @@ int main(int argc, char *argv[]) {
 
     char *src_buf = read_src(src_path);
     if (src_buf == NULL) {
-        printf("failed to read source file \"%s\"\r\n", src_path);
+        printf("ERROR: failed to read source file \"%s\"\r\n", src_path);
         return 1;
     }
 
     ast_element_t ast = asm_parse(src_buf);
     // asm_parse_debug_print(&ast, src_buf, 0);
 
+    // TODO: includes
     // TODO: parse def's, replace def calls (could the children pointer be bent (reused) from def children to call children?)
     // now the AST should be flat and include only labels and instructions
 
@@ -1085,7 +1106,7 @@ int main(int argc, char *argv[]) {
             instructions_count++;
             instructions = realloc(instructions, instructions_count * sizeof(instruction_t));
             if (instructions == NULL) {
-                printf("out of memory during instruction allocation\r\n");
+                printf("ERROR: out of memory during instruction allocation\r\n");
                 return 1;
             }
             instructions[instructions_count - 1] = ins_from_ast(&ast.children[i], src_buf);
@@ -1105,30 +1126,51 @@ int main(int argc, char *argv[]) {
         binary_size += instructions[i].bus_w == W_LIT ? 3 : 1;
         binary = realloc(binary, binary_size);
         if (binary == NULL) {
-            printf("out of memory during binary allocation\r\n");
+            printf("ERROR: out of memory during binary allocation\r\n");
             return 1;
+        }
+        if (instructions[i].label != NULL) {
+            printf("         # %s\r\n", instructions[i].label);
         }
         uint8_t bin = ins_to_binary(&instructions[i]);
         binary[binary_size - (instructions[i].bus_w == W_LIT ? 3 : 1)] = bin;
         if (bin != 0x99) {
-            printf("0x%02X", bin);
+            printf("%02X", bin);
         }
         if (instructions[i].bus_w == W_LIT) {
             if (bin != 0x99) {
                 binary[binary_size - 2] = instructions[i].literal >> 8;
                 binary[binary_size - 1] = instructions[i].literal & 0xFF;
-                printf(" 0x%04X", instructions[i].literal);
+                printf(" %04X", instructions[i].literal);
             } else {
                 binary[binary_size - 2] = 0x00;
                 binary[binary_size - 1] = 0x00;
             }
         }
         if (bin != 0x99) {
+            if (instructions[i].bus_w != W_LIT)
+                printf("     ");
+            printf("  # ");
+            asm_token_print_position(&instructions[i].ref_token, src_buf);
             printf("\r\n");
         }
     }
 
-    // TODO: output format
+    char *bin_path = malloc(strlen(src_path) + 4);
+    if (bin_path == NULL) {
+        printf("ERROR: out of memory during binary path allocation\r\n");
+        return 1;
+    }
+    memcpy(bin_path, src_path, strlen(src_path) + 1);
+    char *bin_iterator = bin_path + strlen(src_path) - 1;
+    while (*bin_iterator != '.' && bin_iterator != bin_path) {
+        bin_iterator--;
+    }
+    bin_iterator[1] = 'b';
+    bin_iterator[2] = 'i';
+    bin_iterator[3] = 'n';
+    bin_iterator[4] = '\0';
+    write_bin(bin_path, binary, binary_size);
 
     asm_parse_free_ast(&ast);
     ins_free(instructions, instructions_count);
