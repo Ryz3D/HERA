@@ -11,6 +11,118 @@ const char *default_src = "./programs/assembly/fib.ha";
 
 typedef uint32_t index_t;
 
+typedef enum token_type {
+    TOKEN_UNKNOWN,
+    TOKEN_END,           // EOF
+    TOKEN_BUS,           // ->
+    TOKEN_SEMICOLON,     // ;
+    TOKEN_COLON,         // :
+    TOKEN_COMMA,         // ,
+    TOKEN_PARAM,         // *
+    TOKEN_EQUALS,        // =
+    TOKEN_EXCLAM,        // !
+    TOKEN_PLUS,          // +
+    TOKEN_MINUS,         // -
+    TOKEN_OPEN_C,        // {
+    TOKEN_CLOSE_C,       // }
+    TOKEN_OPEN_S,        // [
+    TOKEN_CLOSE_S,       // ]
+    TOKEN_LITERAL_b,     // 0b
+    TOKEN_LITERAL_o,     // 0o
+    TOKEN_LITERAL_x,     // 0x
+    TOKEN_LITERAL_d,     // 0
+    TOKEN_LABEL,         // "abc"
+    TOKEN_STAR_KEYWORD,  // *abc
+    TOKEN_KEYWORD,       // abc
+    TOKEN_KEYWORD_INC,   // inc
+    TOKEN_KEYWORD_DEF,   // def
+} token_type_t;
+
+typedef struct token {
+    token_type_t type;
+    index_t start, end;  // incl. start, excl. end
+} token_t;
+
+typedef struct tokenizer_state {
+    index_t i;
+} tokenizer_state_t;
+
+typedef enum ins_bus_w {
+    W_INVALID = 0x10,
+    W_LABEL = 0x11,
+    W_LIT = 0x0,
+    W_A = 0x1,
+    W_B = 0x2,
+    W_C = 0x3,
+    W_RAM = 0x4,
+    W_RP = 0x5,
+    W_PC = 0x6,
+    W_STAT = 0x7,
+    W_ADD = 0xA,
+    W_COM = 0xB,
+    W_NOR = 0xC,
+} ins_bus_w_t;
+
+typedef uint16_t ast_index_t;
+
+typedef enum ast_type {
+    AST_UNKNOWN,
+    AST_ROOT,
+    AST_CONTENT,        // token as string content
+    AST_INC,            // inc defaults.ha
+    AST_DEF,            // def *AND {
+    AST_DEF_CONFIG,     // def *AND[temp=A B] {
+    AST_DEF_CALL,       // *AND ->
+    AST_INSTRUCTION,    // A -> B
+    AST_INS_BUS_WRITE,  // A ->
+    AST_INS_BUS_READ,   //   -> B
+    AST_LABEL,          // "main":
+    AST_ASM_DIRECTIVE,  // !RS
+} ast_type_t;
+
+typedef struct ast_element {
+    ast_type_t type;
+    token_t content_token;
+    struct ast_element *children;
+    ast_index_t children_count;
+} ast_element_t;
+
+typedef struct parser_state {
+    ast_element_t root;
+    ast_element_t *current_context;
+    token_t current_token, next_token;
+    bool inc_done;
+    char *src;
+    tokenizer_state_t tokenizer_state;
+} parser_state_t;
+
+typedef enum ins_bus_r {
+    R_INVALID = 0x10,
+    R_VOID = 0x0,
+    R_A = 0x1,
+    R_B = 0x2,
+    R_C = 0x3,
+    R_RAM = 0x4,
+    R_RP = 0x5,
+    R_PC = 0x6,
+    R_STAT = 0x7,
+    R_A_B = 0xA,
+    R_B_RP = 0xB,
+    R_C_PC = 0xC,
+    R_PC_C = 0xD,
+    R_PC_Z = 0xE,
+    R_PC_N = 0xF,
+} ins_bus_r_t;
+
+typedef struct instruction {
+    ins_bus_w_t bus_w;
+    ins_bus_r_t bus_r;
+    char *label;
+    char *bus_w_label;
+    uint16_t literal;
+    token_t ref_token;
+} instruction_t;
+
 char *read_src(char *path) {
     printf("reading source file \"%s\"... ", path);
     FILE *f_src = fopen(path, "rb");
@@ -64,41 +176,188 @@ void write_bin(char *path, uint8_t *bin, index_t bin_size) {
     printf("done.\r\n");
 }
 
-typedef enum token_type {
-    TOKEN_UNKNOWN,
-    TOKEN_END,           // EOF
-    TOKEN_BUS,           // ->
-    TOKEN_SEMICOLON,     // ;
-    TOKEN_COLON,         // :
-    TOKEN_COMMA,         // ,
-    TOKEN_PARAM,         // *
-    TOKEN_EQUALS,        // =
-    TOKEN_EXCLAM,        // !
-    TOKEN_PLUS,          // +
-    TOKEN_MINUS,         // -
-    TOKEN_OPEN_C,        // {
-    TOKEN_CLOSE_C,       // }
-    TOKEN_OPEN_S,        // [
-    TOKEN_CLOSE_S,       // ]
-    TOKEN_LITERAL_b,     // 0b
-    TOKEN_LITERAL_o,     // 0o
-    TOKEN_LITERAL_x,     // 0x
-    TOKEN_LITERAL_d,     // 0
-    TOKEN_LABEL,         // "abc"
-    TOKEN_STAR_KEYWORD,  // *abc
-    TOKEN_KEYWORD,       // abc
-    TOKEN_KEYWORD_INC,   // inc
-    TOKEN_KEYWORD_DEF,   // def
-} token_type_t;
+void asm_token_print_position(token_t *token, char *src) {
+    index_t line = 1;
+    index_t col = 1;
+    for (index_t i = 0; i < token->start; i++) {
+        col++;
+        if (src[i] == '\n') {
+            line++;
+            col = 1;
+        }
+    }
+    printf("(line %u:%u)", line, col);
+}
 
-typedef struct token {
-    token_type_t type;
-    index_t start, end;  // incl. start, excl. end
-} token_t;
+index_t asm_token_get_line(token_t *token, char *src) {
+    index_t line = 1;
+    for (index_t i = 0; i < token->start; i++) {
+        if (src[i] == '\n') {
+            line++;
+        }
+    }
+    return line;
+}
 
-typedef struct tokenizer_state {
-    index_t i;
-} tokenizer_state_t;
+void asm_token_content_print(token_t *token, char *src) {
+    for (index_t i = token->start; i < token->end; i++) {
+        printf("%c", src[i]);
+    }
+}
+
+char *asm_token_get_content(token_t *token, char *src) {
+    char *content = malloc((token->end - token->start + 1) * sizeof(char));
+    if (content == NULL) {
+        printf("ERROR: out of memory in asm_token_get_content\r\n");
+        return NULL;
+    }
+    memcpy(content, &src[token->start], token->end - token->start);
+    content[token->end - token->start] = '\0';
+    return content;
+}
+
+#define PRINT_TOKEN(type_name)           \
+    printf("TOKEN: " type_name " (");    \
+    asm_token_content_print(token, src); \
+    printf(")\r\n");
+
+void asm_token_debug_print(token_t *token, char *src) {
+    switch (token->type) {
+        case TOKEN_END:
+            printf("TOKEN: end\r\n");
+            break;
+        case TOKEN_BUS:
+            PRINT_TOKEN("bus");
+            break;
+        case TOKEN_SEMICOLON:
+            PRINT_TOKEN("semicolon");
+            break;
+        case TOKEN_COLON:
+            PRINT_TOKEN("colon");
+            break;
+        case TOKEN_PARAM:
+            PRINT_TOKEN("param");
+            break;
+        case TOKEN_EQUALS:
+            PRINT_TOKEN("equals");
+            break;
+        case TOKEN_EXCLAM:
+            PRINT_TOKEN("exclam");
+            break;
+        case TOKEN_PLUS:
+            PRINT_TOKEN("plus");
+            break;
+        case TOKEN_MINUS:
+            PRINT_TOKEN("minus");
+            break;
+        case TOKEN_OPEN_C:
+            PRINT_TOKEN("open_c");
+            break;
+        case TOKEN_CLOSE_C:
+            PRINT_TOKEN("close_c");
+            break;
+        case TOKEN_OPEN_S:
+            PRINT_TOKEN("open_s");
+            break;
+        case TOKEN_CLOSE_S:
+            PRINT_TOKEN("close_s");
+            break;
+        case TOKEN_LITERAL_b:
+            PRINT_TOKEN("literal bin");
+            break;
+        case TOKEN_LITERAL_o:
+            PRINT_TOKEN("literal oct");
+            break;
+        case TOKEN_LITERAL_x:
+            PRINT_TOKEN("literal hex");
+            break;
+        case TOKEN_LITERAL_d:
+            PRINT_TOKEN("literal dec");
+            break;
+        case TOKEN_LABEL:
+            PRINT_TOKEN("label");
+            break;
+        case TOKEN_STAR_KEYWORD:
+            PRINT_TOKEN("s_keyword");
+            break;
+        case TOKEN_KEYWORD:
+            PRINT_TOKEN("keyword");
+            break;
+        case TOKEN_KEYWORD_INC:
+            PRINT_TOKEN("assembler keyword inc");
+            break;
+        case TOKEN_KEYWORD_DEF:
+            PRINT_TOKEN("assembler keyword def");
+            break;
+        case TOKEN_UNKNOWN:
+        default:
+            PRINT_TOKEN("unknown");
+            break;
+    }
+}
+
+uint8_t ins_to_binary(instruction_t *ins) {
+    if (ins->bus_w == W_INVALID || ins->bus_r == R_INVALID) {
+        printf("ERROR: invalid instruction");
+        goto ins_errinfo;
+    }
+    if (ins->bus_w == W_LABEL && ins->bus_w_label == NULL) {
+        if (ins->bus_w_label == NULL) {
+            printf("ERROR: instruction missing w_label");
+        } else {
+            printf("ERROR: instruction has unresolved w_label");
+        }
+        goto ins_errinfo;
+    }
+    return (((uint8_t)ins->bus_w & 0xF) << 4) | ((uint8_t)ins->bus_r & 0xF);
+
+ins_errinfo:
+    printf(" (0x%02X -> 0x%02X)", ins->bus_w, ins->bus_r);
+    if (ins->label != NULL) {
+        printf(" (label %s)", ins->label);
+    }
+    printf("\r\n");
+    return 0x99;
+}
+
+void write_txt(char *path, instruction_t *instructions, index_t instructions_count, char *src) {
+    printf("writing text file \"%s\"... ", path);
+    FILE *f_txt = fopen(path, "wb");
+
+    if (f_txt == NULL) {
+        printf("ERROR: could not access text file \"%s\"\r\n", path);
+        return;
+    }
+
+    uint16_t pc = 0;
+    for (index_t i = 0; i < instructions_count; i++) {
+        if (instructions[i].label != NULL) {
+            fprintf(f_txt, "# %s:\n", instructions[i].label);
+        }
+        fprintf(f_txt, "(%04x) ", pc);
+        uint8_t bin = ins_to_binary(&instructions[i]);
+        if (bin == 0x99) {
+            fprintf(f_txt, "# ! INVALID INSTRUCTION !");
+        } else {
+            fprintf(f_txt, "%02x", bin);
+        }
+        if (instructions[i].bus_w == W_LIT) {
+            fprintf(f_txt, " %02x %02x", instructions[i].literal >> 8, instructions[i].literal & 0xFF);
+        }
+        if (bin != 0x99) {
+            if (instructions[i].bus_w != W_LIT)
+                fprintf(f_txt, "      ");
+            fprintf(f_txt, "  # ");
+            fprintf(f_txt, " l. %u", asm_token_get_line(&instructions[i].ref_token, src));
+        }
+        fprintf(f_txt, "\r\n");
+        pc += instructions[i].bus_w == W_LIT ? 3 : 1;
+    }
+
+    fclose(f_txt);
+
+    printf("done.\r\n");
+}
 
 void asm_tokenize_init(tokenizer_state_t *state) {
     state->i = 0;
@@ -237,156 +496,6 @@ retry_tokenize:
 
     RETURN_TOKEN(TOKEN_UNKNOWN);
 }
-
-void asm_token_print_position(token_t *token, char *src) {
-    index_t line = 1;
-    index_t col = 1;
-    for (index_t i = 0; i < token->start; i++) {
-        col++;
-        if (src[i] == '\n') {
-            line++;
-            col = 1;
-        }
-    }
-    printf("(line %u:%u)", line, col);
-}
-
-void asm_token_content_print(token_t *token, char *src) {
-    for (index_t i = token->start; i < token->end; i++) {
-        printf("%c", src[i]);
-    }
-}
-
-char *asm_token_get_content(token_t *token, char *src) {
-    char *content = malloc((token->end - token->start + 1) * sizeof(char));
-    if (content == NULL) {
-        printf("ERROR: out of memory in asm_token_get_content\r\n");
-        return NULL;
-    }
-    memcpy(content, &src[token->start], token->end - token->start);
-    content[token->end - token->start] = '\0';
-    return content;
-}
-
-#define PRINT_TOKEN(type_name)           \
-    printf("TOKEN: " type_name " (");    \
-    asm_token_content_print(token, src); \
-    printf(")\r\n");
-
-void asm_token_debug_print(token_t *token, char *src) {
-    switch (token->type) {
-        case TOKEN_END:
-            printf("TOKEN: end\r\n");
-            break;
-        case TOKEN_BUS:
-            PRINT_TOKEN("bus");
-            break;
-        case TOKEN_SEMICOLON:
-            PRINT_TOKEN("semicolon");
-            break;
-        case TOKEN_COLON:
-            PRINT_TOKEN("colon");
-            break;
-        case TOKEN_PARAM:
-            PRINT_TOKEN("param");
-            break;
-        case TOKEN_EQUALS:
-            PRINT_TOKEN("equals");
-            break;
-        case TOKEN_EXCLAM:
-            PRINT_TOKEN("exclam");
-            break;
-        case TOKEN_PLUS:
-            PRINT_TOKEN("plus");
-            break;
-        case TOKEN_MINUS:
-            PRINT_TOKEN("minus");
-            break;
-        case TOKEN_OPEN_C:
-            PRINT_TOKEN("open_c");
-            break;
-        case TOKEN_CLOSE_C:
-            PRINT_TOKEN("close_c");
-            break;
-        case TOKEN_OPEN_S:
-            PRINT_TOKEN("open_s");
-            break;
-        case TOKEN_CLOSE_S:
-            PRINT_TOKEN("close_s");
-            break;
-        case TOKEN_LITERAL_b:
-            PRINT_TOKEN("literal bin");
-            break;
-        case TOKEN_LITERAL_o:
-            PRINT_TOKEN("literal oct");
-            break;
-        case TOKEN_LITERAL_x:
-            PRINT_TOKEN("literal hex");
-            break;
-        case TOKEN_LITERAL_d:
-            PRINT_TOKEN("literal dec");
-            break;
-        case TOKEN_LABEL:
-            PRINT_TOKEN("label");
-            break;
-        case TOKEN_STAR_KEYWORD:
-            PRINT_TOKEN("s_keyword");
-            break;
-        case TOKEN_KEYWORD:
-            PRINT_TOKEN("keyword");
-            break;
-        case TOKEN_KEYWORD_INC:
-            PRINT_TOKEN("assembler keyword inc");
-            break;
-        case TOKEN_KEYWORD_DEF:
-            PRINT_TOKEN("assembler keyword def");
-            break;
-        case TOKEN_UNKNOWN:
-        default:
-            PRINT_TOKEN("unknown");
-            break;
-    }
-}
-
-// inc only at top of file (bool inc_done)
-// normal context:
-//   bus write: keyword/s_keyword, param, literals (b, o, d, x), label
-//   bus
-//   bus read: everything but literals and labels
-//   ;
-
-typedef uint16_t ast_index_t;
-
-typedef enum ast_type {
-    AST_UNKNOWN,
-    AST_ROOT,
-    AST_CONTENT,        // token as string content
-    AST_INC,            // inc defaults.ha
-    AST_DEF,            // def *AND {
-    AST_DEF_CONFIG,     // def *AND[temp=A B] {
-    AST_DEF_CALL,       // *AND ->
-    AST_INSTRUCTION,    // A -> B
-    AST_INS_BUS_WRITE,  // A ->
-    AST_INS_BUS_READ,   //   -> B
-    AST_LABEL,          // "main":
-    AST_ASM_DIRECTIVE,  // !RS
-} ast_type_t;
-
-typedef struct ast_element {
-    ast_type_t type;
-    token_t content_token;
-    struct ast_element *children;
-    ast_index_t children_count;
-} ast_element_t;
-
-typedef struct parser_state {
-    ast_element_t root;
-    ast_element_t *current_context;
-    token_t current_token, next_token;
-    bool inc_done;
-    char *src;
-    tokenizer_state_t tokenizer_state;
-} parser_state_t;
 
 void asm_parse_element_init(ast_element_t *element) {
     element->type = AST_UNKNOWN;
@@ -733,49 +842,6 @@ void asm_parse_debug_print(ast_element_t *ast, char *src, int level) {
     }
 }
 
-typedef enum ins_bus_w {
-    W_INVALID = 0x10,
-    W_LABEL = 0x11,
-    W_LIT = 0x0,
-    W_A = 0x1,
-    W_B = 0x2,
-    W_C = 0x3,
-    W_RAM = 0x4,
-    W_RP = 0x5,
-    W_PC = 0x6,
-    W_STAT = 0x7,
-    W_ADD = 0xA,
-    W_COM = 0xB,
-    W_NOR = 0xC,
-} ins_bus_w_t;
-
-typedef enum ins_bus_r {
-    R_INVALID = 0x10,
-    R_VOID = 0x0,
-    R_A = 0x1,
-    R_B = 0x2,
-    R_C = 0x3,
-    R_RAM = 0x4,
-    R_RP = 0x5,
-    R_PC = 0x6,
-    R_STAT = 0x7,
-    R_A_B = 0xA,
-    R_B_RP = 0xB,
-    R_C_PC = 0xC,
-    R_PC_C = 0xD,
-    R_PC_Z = 0xE,
-    R_PC_N = 0xF,
-} ins_bus_r_t;
-
-typedef struct instruction {
-    ins_bus_w_t bus_w;
-    ins_bus_r_t bus_r;
-    char *label;
-    char *bus_w_label;
-    uint16_t literal;
-    token_t ref_token;
-} instruction_t;
-
 void ins_init(instruction_t *ins) {
     ins->bus_w = W_INVALID;
     ins->bus_r = R_INVALID;
@@ -794,30 +860,6 @@ void ins_free(instruction_t *instructions, index_t instructions_count) {
         }
     }
     free(instructions);
-}
-
-uint8_t ins_to_binary(instruction_t *ins) {
-    if (ins->bus_w == W_INVALID || ins->bus_r == R_INVALID) {
-        printf("ERROR: invalid instruction");
-        goto ins_errinfo;
-    }
-    if (ins->bus_w == W_LABEL && ins->bus_w_label == NULL) {
-        if (ins->bus_w_label == NULL) {
-            printf("ERROR: instruction missing w_label");
-        } else {
-            printf("ERROR: instruction has unresolved w_label");
-        }
-        goto ins_errinfo;
-    }
-    return (((uint8_t)ins->bus_w & 0xF) << 4) | ((uint8_t)ins->bus_r & 0xF);
-
-ins_errinfo:
-    printf(" (0x%02X -> 0x%02X)", ins->bus_w, ins->bus_r);
-    if (ins->label != NULL) {
-        printf(" (label %s)", ins->label);
-    }
-    printf("\r\n");
-    return 0x99;
 }
 
 void ins_resolve_labels(instruction_t *ins, index_t ins_count, char *src) {
@@ -1076,6 +1118,94 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
     return ins;
 }
 
+void ast_find_duplicate_defs(ast_element_t ast, char *src) {
+    for (ast_index_t i = 0; i < ast.children_count; i++) {
+        if (ast.children[i].type == AST_DEF) {
+            char *d1 = asm_token_get_content(&ast.children[i].content_token, src);
+            if (d1 == NULL) {
+                continue;
+            }
+            for (ast_index_t j = i + 1; j < ast.children_count; j++) {
+                if (ast.children[j].type == AST_DEF) {
+                    char *d2 = asm_token_get_content(&ast.children[j].content_token, src);
+                    if (d2 == NULL) {
+                        continue;
+                    }
+                    if (strcmp(d1, d2) == 0) {
+                        printf("WARNING: using ");
+                        asm_token_print_position(&ast.children[i].content_token, src);
+                        printf(", not ");
+                        asm_token_print_position(&ast.children[j].content_token, src);
+                        printf(" for duplicate def \"%s\"\r\n", d1);
+                        break;
+                    }
+                    free(d2);
+                }
+            }
+            free(d1);
+        }
+    }
+}
+
+void ast_deep_copy(ast_element_t *dest, ast_element_t *src) {
+    dest->type = src->type;
+    dest->content_token = src->content_token;
+    for (ast_index_t i = 0; i < src->children_count; i++) {
+        ast_element_t *child = asm_parse_add_child(dest);
+        ast_deep_copy(child, &src->children[i]);
+    }
+}
+
+ast_element_t ast_resolve_defs(ast_element_t ast, char *src) {
+    ast_element_t new_ast = {
+        .children = NULL,
+        .children_count = 0,
+        .type = AST_ROOT,
+    };
+
+    for (ast_index_t i = 0; i < ast.children_count; i++) {
+        // TODO: this type is probably nested in some instruction bus_w and bus_r
+        if (ast.children[i].type != AST_DEF_CALL) {
+            ast_element_t *new_el = asm_parse_add_child(&new_ast);
+            ast_deep_copy(new_el, &ast.children[i]);
+        } else {
+            char *d1 = asm_token_get_content(&ast.children[i].content_token, src);
+            if (d1 == NULL) {
+                printf("ERROR: out of memory for def call content allocation\r\n");
+                return new_ast;
+            }
+            bool def_found = false;
+            for (ast_index_t j = 0; j < ast.children_count; j++) {
+                if (ast.children[j].type == AST_DEF) {
+                    char *d2 = asm_token_get_content(&ast.children[j].content_token, src);
+                    if (d2 == NULL) {
+                        printf("ERROR: out of memory for def content allocation\r\n");
+                        free(d1);
+                        return new_ast;
+                    }
+                    if (strcmp(d1, d2) == 0) {
+                        // TODO:
+                        // push instructions from def with some changes for in/out
+                        // check for !RS directive (restore all overwritten registers)
+                        // push all other instructions
+                        def_found = true;
+                        break;
+                    }
+                    free(d2);
+                }
+            }
+            if (!def_found) {
+                printf("ERROR: def \"%s\" not found\r\n", d1);
+                free(d1);
+                return new_ast;
+            }
+            free(d1);
+        }
+    }
+
+    return new_ast;
+}
+
 int main(int argc, char *argv[]) {
     char *src_path = (char *)default_src;
 
@@ -1094,9 +1224,10 @@ int main(int argc, char *argv[]) {
     ast_element_t ast = asm_parse(src_buf);
     // asm_parse_debug_print(&ast, src_buf, 0);
 
-    // TODO: includes
-    // TODO: parse def's, replace def calls (could the children pointer be bent (reused) from def children to call children?)
-    // now the AST should be flat and include only labels and instructions
+    // TODO: includes (find, parse, add instructions as ast elements with ref_token at include directive)
+
+    ast_find_duplicate_defs(ast, src_buf);
+    ast = ast_resolve_defs(ast, src_buf);
 
     instruction_t *instructions = NULL;
     index_t instructions_count = 0;
@@ -1129,48 +1260,43 @@ int main(int argc, char *argv[]) {
             printf("ERROR: out of memory during binary allocation\r\n");
             return 1;
         }
-        if (instructions[i].label != NULL) {
-            printf("         # %s\r\n", instructions[i].label);
-        }
         uint8_t bin = ins_to_binary(&instructions[i]);
         binary[binary_size - (instructions[i].bus_w == W_LIT ? 3 : 1)] = bin;
-        if (bin != 0x99) {
-            printf("%02X", bin);
-        }
         if (instructions[i].bus_w == W_LIT) {
             if (bin != 0x99) {
                 binary[binary_size - 2] = instructions[i].literal >> 8;
                 binary[binary_size - 1] = instructions[i].literal & 0xFF;
-                printf(" %04X", instructions[i].literal);
             } else {
                 binary[binary_size - 2] = 0x00;
                 binary[binary_size - 1] = 0x00;
             }
         }
-        if (bin != 0x99) {
-            if (instructions[i].bus_w != W_LIT)
-                printf("     ");
-            printf("  # ");
-            asm_token_print_position(&instructions[i].ref_token, src_buf);
-            printf("\r\n");
-        }
     }
 
     char *bin_path = malloc(strlen(src_path) + 4);
-    if (bin_path == NULL) {
+    char *txt_path = malloc(strlen(src_path) + 4);
+    if (bin_path == NULL || txt_path == NULL) {
         printf("ERROR: out of memory during binary path allocation\r\n");
         return 1;
     }
     memcpy(bin_path, src_path, strlen(src_path) + 1);
+    memcpy(txt_path, src_path, strlen(src_path) + 1);
     char *bin_iterator = bin_path + strlen(src_path) - 1;
+    char *txt_iterator = txt_path + strlen(src_path) - 1;
     while (*bin_iterator != '.' && bin_iterator != bin_path) {
         bin_iterator--;
+        txt_iterator--;
     }
     bin_iterator[1] = 'b';
     bin_iterator[2] = 'i';
     bin_iterator[3] = 'n';
     bin_iterator[4] = '\0';
+    txt_iterator[1] = 't';
+    txt_iterator[2] = 'x';
+    txt_iterator[3] = 't';
+    txt_iterator[4] = '\0';
     write_bin(bin_path, binary, binary_size);
+    write_txt(txt_path, instructions, instructions_count, src_buf);
 
     asm_parse_free_ast(&ast);
     ins_free(instructions, instructions_count);
