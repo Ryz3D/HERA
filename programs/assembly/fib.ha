@@ -105,6 +105,7 @@ def *STA {
     C -> RAM;
     "loop" -> PC;
     5 -> *STA;
+    *STA -> A;
 
 # OPTIMIZATION
 # main:
