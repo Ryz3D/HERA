@@ -80,10 +80,6 @@
 
 inc defaults.ha;
 
-def *STA {
-    0x11 -> RAM_P; A -> RAM;
-}
-
 "main":
     0x1001 -> RAM_P;
     1 -> RAM;
@@ -104,8 +100,6 @@ def *STA {
     0x1002 -> RAM_P;
     C -> RAM;
     "loop" -> PC;
-    5 -> *STA;
-    *STA -> A;
 
 # OPTIMIZATION
 # main:
