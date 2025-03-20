@@ -122,7 +122,7 @@ def *POP[temp=A B] { # pop from stack to *
 
 # flow control
 def *JSR[temp=A B] { # jump to subroutine (* -> PC)
-    "jsr_[x+1]" -> *PUSH;
+    "jsr_[x+1]" -> *PUSH; # maybe just always keep from push -> no !RS
     !RS;
     * -> PC;
 "jsr_[x]":

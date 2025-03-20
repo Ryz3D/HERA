@@ -80,6 +80,12 @@
 
 inc defaults.ha;
 
+def *TEST[temp=A B C] {
+    0xFF -> RAM_P;
+    5 -> A;
+    A -> *;
+}
+
 "main":
     0x1001 -> RAM_P;
     1 -> RAM;
@@ -100,6 +106,7 @@ inc defaults.ha;
     0x1002 -> RAM_P;
     C -> RAM;
     "loop" -> PC;
+    *TEST[keep=A B C] -> B;
 
 # OPTIMIZATION
 # main:
