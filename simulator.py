@@ -14,7 +14,7 @@ for f in sys.argv[1:]:
         f_path = f
 
 if f_help:
-    print("""HERA assembler
+    print("""HERA simulator
 """)
     exit()
 

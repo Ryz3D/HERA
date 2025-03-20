@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DEBUG 1
+#define DEBUG 0
 // maximum depth of nested defs
 #define DEF_RESOLVE_PASSES 3
 
 // const char *default_src = "./defaults.ha";
-const char *default_src = "./programs/assembly/fib.ha";
+const char *default_src = "./programs/assembly/def_test.ha";
 
 typedef uint32_t index_t;
 
@@ -1028,6 +1028,32 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
                 ins.bus_w = W_COM;
             } else if (strcmp(content, "NOR") == 0) {
                 ins.bus_w = W_NOR;
+            } else if (ast_bus_w->children[0].content_token.type == TOKEN_MINUS) {
+                if (ast_bus_w->children_count < 2) {
+                    printf("ERROR: ");
+                    asm_token_print_position(&ins.ref_token, src);
+                    printf(" expected literal after sign\r\n");
+                } else {
+                    char *content2 = asm_token_get_content(&ast_bus_w->children[1].content_token, src);
+                    if (ast_bus_w->children[1].content_token.type == TOKEN_LITERAL_b) {
+                        ins.bus_w = W_LIT;
+                        ins.literal = -parse_literal(content2, 2);
+                    } else if (ast_bus_w->children[1].content_token.type == TOKEN_LITERAL_o) {
+                        ins.bus_w = W_LIT;
+                        ins.literal = -parse_literal(content2, 8);
+                    } else if (ast_bus_w->children[1].content_token.type == TOKEN_LITERAL_d) {
+                        ins.bus_w = W_LIT;
+                        ins.literal = -parse_literal(content2, 10);
+                    } else if (ast_bus_w->children[1].content_token.type == TOKEN_LITERAL_x) {
+                        ins.bus_w = W_LIT;
+                        ins.literal = -parse_literal(content2, 16);
+                    } else {
+                        printf("ERROR: ");
+                        asm_token_print_position(&ins.ref_token, src);
+                        printf(" expected literal after sign\r\n");
+                    }
+                    free(content2);
+                }
             } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_b) {
                 ins.bus_w = W_LIT;
                 ins.literal = parse_literal(content, 2);
@@ -1036,7 +1062,7 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
                 ins.literal = parse_literal(content, 8);
             } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_d) {
                 ins.bus_w = W_LIT;
-                ins.literal = content[0] == '-' ? -parse_literal(content + 1, 10) : parse_literal(content, 10);
+                ins.literal = parse_literal(content, 10);
             } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_x) {
                 ins.bus_w = W_LIT;
                 ins.literal = parse_literal(content, 16);
@@ -1297,6 +1323,8 @@ void ast_create_def(ast_element_t *root, ast_element_t instruction, ast_element_
                                     }
                                 }
                             }
+                            // TODO: never restore read-from-bus-reg (param)
+                            // TODO: restore instructions for write-to-bus-reg if input flag * is after !RS and write-to-bus-reg in temp (write-to-bus-reg for ADD/NOR is "A B" and COM "A")
                             if (keep_a) {
                                 asm_parse_add_child(root)->type = AST_STA;
                             }
