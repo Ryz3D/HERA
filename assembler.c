@@ -719,7 +719,6 @@ ast_element_t asm_parse(char *src) {
                 if (!asm_parse_instruction(&state)) {
                     ASM_PARSE_ERR("did not understand instruction format");
                 }
-                // TODO: maybe single_step = true;
                 break;
             case TOKEN_LABEL: {
                 if (state.next_token.type == TOKEN_COLON) {
@@ -1312,8 +1311,9 @@ bool asm_create_def_if_matching(ast_element_t *root, const char *d1, ast_element
                             }
                         }
                     }
-                    // TODO: never restore read-from-bus param
+                    // TODO: !!! never restore read-from-bus param !!!
                     // TODO: restore instructions for write-to-bus-reg if input flag * is after !RS and write-to-bus-reg in temp (write-to-bus-reg for ADD/NOR is "A B" and COM "A")
+                    // ^ this is important since the def doesn't know which parameter it receives, thus you would need STA, STB and STC everywhere if there are calculations before using param
                     if (*keep_a) {
                         asm_parse_add_child(root)->type = AST_STA;
                     }
@@ -1512,7 +1512,6 @@ ast_element_t asm_resolve_defs(ast_element_t ast, inc_context_t *inc_contexts, a
                     }
                 }
             }
-            // TODO: this will probably not work with *DEF -> *DEF
             bool bus_r_exists = false;
             if (bus_r != NULL) {
                 if (bus_r->children_count > 0) {
@@ -1588,7 +1587,7 @@ instruction_t *asm_instructions_from_ast(ast_element_t ast, index_t *instruction
                     .ref_token = { .type = TOKEN_UNKNOWN, .start = 0, .end = 0 },
                 };
                 if (ast.children[i].type == AST_STA || ast.children[i].type == AST_RSA) {
-                    // TODO: let this add just a def call, expect def in assembly. should work with src per token
+                    // TODO: let this just add a def call to AST, expect def in assembly. should work with src per token
                     instructions[(*instructions_count) - 2].literal = ASM_STA_ADDRESS;
                     instructions[(*instructions_count) - 1].bus_w = ast.children[i].type == AST_STA ? W_A : W_RAM;
                     instructions[(*instructions_count) - 1].bus_r = ast.children[i].type == AST_STA ? R_RAM : W_A;

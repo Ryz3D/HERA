@@ -1,6 +1,8 @@
 inc defaults.ha;
 
 "main":
+    *RSS;
+
     1 -> A;
     A -> *PUSH;
     2 -> A;
