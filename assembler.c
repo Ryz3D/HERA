@@ -4,9 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DEBUG 0
-// maximum depth of nested defs
-#define DEF_RESOLVE_PASSES 3
+#define ASM_DEBUG 1
+// maximum depth of nested def calls
+#define ASM_DEF_RESOLVE_PASSES 3
+#define ASM_STA_ADDRESS 0x11
+#define ASM_STB_ADDRESS 0x12
+#define ASM_STC_ADDRESS 0x13
 
 // const char *default_src = "./defaults.ha";
 const char *default_src = "./programs/assembly/def_test.ha";
@@ -43,6 +46,7 @@ typedef enum token_type {
 typedef struct token {
     token_type_t type;
     index_t start, end;  // incl. start, excl. end
+    char *src;
 } token_t;
 
 typedef struct tokenizer_state {
@@ -65,7 +69,7 @@ typedef enum ins_bus_w {
     W_NOR = 0xC,
 } ins_bus_w_t;
 
-typedef uint16_t ast_index_t;
+typedef uint32_t ast_index_t;
 
 typedef enum ast_type {
     AST_UNKNOWN,
@@ -135,7 +139,13 @@ typedef struct instruction {
     token_t bus_r_def_token;
 } instruction_t;
 
-char *read_src(char *path) {
+typedef struct inc_context {
+    char *path;
+    char *src;
+    ast_element_t ast;
+} inc_context_t;
+
+char *asm_read_src(const char *path) {
     printf("reading source file \"%s\"... ", path);
     FILE *f_src = fopen(path, "rb");
 
@@ -168,7 +178,7 @@ char *read_src(char *path) {
     return src_buf;
 }
 
-void write_bin(char *path, uint8_t *bin, index_t bin_size) {
+void asm_write_bin(const char *path, uint8_t *bin, index_t bin_size) {
     printf("writing binary file \"%s\"... ", path);
     FILE *f_bin = fopen(path, "wb");
 
@@ -190,12 +200,40 @@ void write_bin(char *path, uint8_t *bin, index_t bin_size) {
     printf("done.\r\n");
 }
 
-void asm_token_print_position(token_t *token, char *src) {
+void asm_write_img(const char *path, uint8_t *bin, index_t bin_size) {
+    printf("writing image file \"%s\"... ", path);
+    FILE *f_img = fopen(path, "wb");
+
+    if (f_img == NULL) {
+        printf("ERROR: could not access image file \"%s\"\r\n", path);
+        return;
+    }
+
+    fprintf(f_img, "v2.0 raw\n");
+    for (index_t i = 0; i < bin_size; i += 8) {
+        for (index_t j = 0; j < 8; j++) {
+            if (i + j >= bin_size) {
+                break;
+            }
+            fprintf(f_img, "%02x", bin[i + j]);
+            if (j < 7) {
+                fprintf(f_img, " ");
+            }
+        }
+        fprintf(f_img, "\n");
+    }
+
+    fclose(f_img);
+
+    printf("done.\r\n");
+}
+
+void asm_token_print_position(token_t *token) {
     index_t line = 1;
     index_t col = 1;
     for (index_t i = 0; i < token->start; i++) {
         col++;
-        if (src[i] == '\n') {
+        if (token->src[i] == '\n') {
             line++;
             col = 1;
         }
@@ -203,39 +241,39 @@ void asm_token_print_position(token_t *token, char *src) {
     printf("(line %u:%u)", line, col);
 }
 
-index_t asm_token_get_line(token_t *token, char *src) {
+index_t asm_token_get_line(token_t *token) {
     index_t line = 1;
     for (index_t i = 0; i < token->start; i++) {
-        if (src[i] == '\n') {
+        if (token->src[i] == '\n') {
             line++;
         }
     }
     return line;
 }
 
-void asm_token_content_print(token_t *token, char *src) {
+void asm_token_content_print(token_t *token) {
     for (index_t i = token->start; i < token->end; i++) {
-        printf("%c", src[i]);
+        printf("%c", token->src[i]);
     }
 }
 
-char *asm_token_get_content(token_t *token, char *src) {
+char *asm_token_get_content(token_t *token) {
     char *content = malloc((token->end - token->start + 1) * sizeof(char));
     if (content == NULL) {
         printf("ERROR: out of memory in asm_token_get_content\r\n");
         return NULL;
     }
-    memcpy(content, &src[token->start], token->end - token->start);
+    memcpy(content, &token->src[token->start], token->end - token->start);
     content[token->end - token->start] = '\0';
     return content;
 }
 
 #define PRINT_TOKEN(type_name)           \
     printf("TOKEN: " type_name " (");    \
-    asm_token_content_print(token, src); \
+    asm_token_content_print(token); \
     printf(")\r\n");
 
-void asm_token_debug_print(token_t *token, char *src) {
+void asm_token_debug_print(token_t *token) {
     switch (token->type) {
         case TOKEN_END:
             printf("TOKEN: end\r\n");
@@ -310,7 +348,7 @@ void asm_token_debug_print(token_t *token, char *src) {
     }
 }
 
-uint8_t ins_to_binary(instruction_t *ins) {
+uint8_t asm_ins_to_binary(instruction_t *ins) {
     if (ins->bus_w == W_INVALID || ins->bus_r == R_INVALID) {
         return 0x99;
     }
@@ -325,7 +363,7 @@ uint8_t ins_to_binary(instruction_t *ins) {
     return (((uint8_t)ins->bus_w & 0xF) << 4) | ((uint8_t)ins->bus_r & 0xF);
 }
 
-void write_txt(char *path, instruction_t *instructions, index_t instructions_count, char *src, uint8_t *binary, index_t binary_size) {
+void asm_write_txt(const char *path, instruction_t *instructions, index_t instructions_count, uint8_t *binary, index_t binary_size) {
     printf("writing text file \"%s\"... ", path);
     FILE *f_txt = fopen(path, "wb");
 
@@ -343,7 +381,7 @@ void write_txt(char *path, instruction_t *instructions, index_t instructions_cou
         uint8_t bin = binary[pc];
         fprintf(f_txt, "%02x", bin);
         if (bin == 0x99) {
-            fprintf(f_txt, "        #  l. %u - INVALID INSTRUCTION\r\n", asm_token_get_line(&instructions[i].ref_token, src));
+            fprintf(f_txt, "        #  l. %u - INVALID INSTRUCTION\r\n", asm_token_get_line(&instructions[i].ref_token));
             pc++;
             continue;
         }
@@ -354,7 +392,7 @@ void write_txt(char *path, instruction_t *instructions, index_t instructions_cou
             if (instructions[i].bus_w != W_LIT)
                 fprintf(f_txt, "      ");
             fprintf(f_txt, "  # ");
-            fprintf(f_txt, " l. %u", asm_token_get_line(&instructions[i].ref_token, src));
+            fprintf(f_txt, " l. %u", asm_token_get_line(&instructions[i].ref_token));
         }
         fprintf(f_txt, "\r\n");
         pc += instructions[i].bus_w == W_LIT ? 3 : 1;
@@ -374,6 +412,7 @@ void asm_tokenize_init(tokenizer_state_t *state) {
         .type = token_type,      \
         .start = token_start,    \
         .end = state->i,         \
+        .src = src,              \
     };
 
 #define RETURN_TOKEN_WITH_LENGTH(token_len, token_type) \
@@ -508,6 +547,7 @@ void asm_parse_element_init(ast_element_t *element) {
     element->content_token.type = TOKEN_UNKNOWN;
     element->content_token.start = 0;
     element->content_token.end = 0;
+    element->content_token.src = NULL;
     element->children = NULL;
     element->children_count = 0;
 }
@@ -639,11 +679,11 @@ bool asm_parse_instruction(parser_state_t *state) {
 
 #define ASM_PARSE_ERR(msg)                                     \
     printf("ERROR: ");                                         \
-    asm_token_print_position(&state.current_token, state.src); \
+    asm_token_print_position(&state.current_token); \
     printf(" \"");                                             \
-    asm_token_content_print(&state.current_token, state.src);  \
+    asm_token_content_print(&state.current_token);  \
     printf(" ");                                               \
-    asm_token_content_print(&state.next_token, state.src);     \
+    asm_token_content_print(&state.next_token);     \
     printf("\" " msg "\r\n");                                  \
     return state.root;
 
@@ -773,7 +813,7 @@ ast_element_t asm_parse(char *src) {
                 }
                 break;
             default:
-                asm_token_debug_print(&state.current_token, state.src);
+                asm_token_debug_print(&state.current_token);
                 ASM_PARSE_ERR("unexpected token");
                 break;
         }
@@ -796,7 +836,7 @@ void asm_parse_free_ast(ast_element_t *ast) {
     }
 }
 
-void asm_parse_debug_print(ast_element_t *ast, char *src, int level) {
+void asm_parse_debug_print(ast_element_t *ast, int level) {
     for (int s = 0; s < level; s++)
         printf("  ");
     printf("type: ");
@@ -845,7 +885,7 @@ void asm_parse_debug_print(ast_element_t *ast, char *src, int level) {
         for (int s = 0; s < level; s++)
             printf("  ");
         printf("content_token: ");
-        asm_token_debug_print(&ast->content_token, src);
+        asm_token_debug_print(&ast->content_token);
     }
 
     for (int s = 0; s < level; s++)
@@ -856,11 +896,11 @@ void asm_parse_debug_print(ast_element_t *ast, char *src, int level) {
         for (int s = 0; s < level; s++)
             printf("  ");
         printf("child (%i):\r\n", i);
-        asm_parse_debug_print(&ast->children[i], src, level + 1);
+        asm_parse_debug_print(&ast->children[i], level + 1);
     }
 }
 
-void ins_init(instruction_t *ins) {
+void asm_ins_init(instruction_t *ins) {
     ins->bus_w = W_INVALID;
     ins->bus_r = R_INVALID;
     ins->label = NULL;
@@ -868,7 +908,7 @@ void ins_init(instruction_t *ins) {
     ins->literal = 0;
 }
 
-void ins_free(instruction_t *instructions, index_t instructions_count) {
+void asm_ins_free(instruction_t *instructions, index_t instructions_count) {
     for (index_t i = 0; i < instructions_count; i++) {
         if (instructions[i].label != NULL) {
             free(instructions[i].label);
@@ -881,7 +921,7 @@ void ins_free(instruction_t *instructions, index_t instructions_count) {
 }
 
 // TODO: !! indexed !! labels
-void ins_resolve_labels(instruction_t *ins, index_t ins_count, char *src) {
+void asm_ins_resolve_labels(instruction_t *ins, index_t ins_count) {
     for (index_t i = 0; i < ins_count; i++) {
         if (ins[i].bus_w == W_LABEL) {
             index_t program_index = 0;
@@ -901,14 +941,14 @@ void ins_resolve_labels(instruction_t *ins, index_t ins_count, char *src) {
             }
             if (ins[i].bus_w != W_LIT) {
                 ins[i].bus_w = W_INVALID;
-                asm_token_print_position(&ins[i].ref_token, src);
+                asm_token_print_position(&ins[i].ref_token);
                 printf(" ERROR: can't resolve label \"%s\"\r\n", ins[i].bus_w_label);
             }
         }
     }
 }
 
-uint16_t parse_literal(char *content, uint8_t base) {
+uint16_t asm_parse_literal(const char *content, uint8_t base) {
     if (base == 2 || base == 8 || base == 16) {
         content += 2;
     }
@@ -952,7 +992,7 @@ uint16_t parse_literal(char *content, uint8_t base) {
     return res;
 }
 
-instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
+instruction_t asm_instruction_from_ast(ast_element_t *ast_element) {
     if (ast_element->type != AST_INSTRUCTION || ast_element->children_count != 2) {
         printf("ERROR: incorrect AST type %i for instruction\r\n", ast_element->type);
         return (instruction_t){
@@ -1004,7 +1044,7 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
 
     switch (ast_bus_w->children[0].type) {
         case AST_CONTENT: {
-            char *content = asm_token_get_content(&ast_bus_w->children[0].content_token, src);
+            char *content = asm_token_get_content(&ast_bus_w->children[0].content_token);
             if (content == NULL) {
                 break;
             }
@@ -1031,51 +1071,51 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
             } else if (ast_bus_w->children[0].content_token.type == TOKEN_MINUS) {
                 if (ast_bus_w->children_count < 2) {
                     printf("ERROR: ");
-                    asm_token_print_position(&ins.ref_token, src);
+                    asm_token_print_position(&ins.ref_token);
                     printf(" expected literal after sign\r\n");
                 } else {
-                    char *content2 = asm_token_get_content(&ast_bus_w->children[1].content_token, src);
+                    char *content2 = asm_token_get_content(&ast_bus_w->children[1].content_token);
                     if (ast_bus_w->children[1].content_token.type == TOKEN_LITERAL_b) {
                         ins.bus_w = W_LIT;
-                        ins.literal = -parse_literal(content2, 2);
+                        ins.literal = -asm_parse_literal(content2, 2);
                     } else if (ast_bus_w->children[1].content_token.type == TOKEN_LITERAL_o) {
                         ins.bus_w = W_LIT;
-                        ins.literal = -parse_literal(content2, 8);
+                        ins.literal = -asm_parse_literal(content2, 8);
                     } else if (ast_bus_w->children[1].content_token.type == TOKEN_LITERAL_d) {
                         ins.bus_w = W_LIT;
-                        ins.literal = -parse_literal(content2, 10);
+                        ins.literal = -asm_parse_literal(content2, 10);
                     } else if (ast_bus_w->children[1].content_token.type == TOKEN_LITERAL_x) {
                         ins.bus_w = W_LIT;
-                        ins.literal = -parse_literal(content2, 16);
+                        ins.literal = -asm_parse_literal(content2, 16);
                     } else {
                         printf("ERROR: ");
-                        asm_token_print_position(&ins.ref_token, src);
+                        asm_token_print_position(&ins.ref_token);
                         printf(" expected literal after sign\r\n");
                     }
                     free(content2);
                 }
             } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_b) {
                 ins.bus_w = W_LIT;
-                ins.literal = parse_literal(content, 2);
+                ins.literal = asm_parse_literal(content, 2);
             } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_o) {
                 ins.bus_w = W_LIT;
-                ins.literal = parse_literal(content, 8);
+                ins.literal = asm_parse_literal(content, 8);
             } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_d) {
                 ins.bus_w = W_LIT;
-                ins.literal = parse_literal(content, 10);
+                ins.literal = asm_parse_literal(content, 10);
             } else if (ast_bus_w->children[0].content_token.type == TOKEN_LITERAL_x) {
                 ins.bus_w = W_LIT;
-                ins.literal = parse_literal(content, 16);
+                ins.literal = asm_parse_literal(content, 16);
             } else {
                 printf("ERROR: ");
-                asm_token_print_position(&ins.ref_token, src);
+                asm_token_print_position(&ins.ref_token);
                 printf(" unknown write-to-bus value\r\n");
             }
             free(content);
             break;
         }
         case AST_LABEL: {
-            char *content = asm_token_get_content(&ast_bus_w->children[0].content_token, src);
+            char *content = asm_token_get_content(&ast_bus_w->children[0].content_token);
             if (content == NULL) {
                 break;
             }
@@ -1089,14 +1129,14 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
             break;
         default:
             printf("ERROR: ");
-            asm_token_print_position(&ins.ref_token, src);
+            asm_token_print_position(&ins.ref_token);
             printf(" unknown write-to-bus value\r\n");
             break;
     }
     switch (ast_bus_r->children[0].type) {
         case AST_CONTENT: {
             if (ast_bus_r->children_count == 1) {
-                char *content = asm_token_get_content(&ast_bus_r->children[0].content_token, src);
+                char *content = asm_token_get_content(&ast_bus_r->children[0].content_token);
                 if (content == NULL) {
                     break;
                 }
@@ -1124,16 +1164,16 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
                     ins.bus_r = R_PC_N;
                 } else {
                     printf("ERROR: ");
-                    asm_token_print_position(&ins.ref_token, src);
+                    asm_token_print_position(&ins.ref_token);
                     printf(" unknown read-from-bus value\r\n");
                 }
                 free(content);
             } else if (ast_bus_r->children_count == 2) {
-                char *content1 = asm_token_get_content(&ast_bus_r->children[0].content_token, src);
+                char *content1 = asm_token_get_content(&ast_bus_r->children[0].content_token);
                 if (content1 == NULL) {
                     break;
                 }
-                char *content2 = asm_token_get_content(&ast_bus_r->children[1].content_token, src);
+                char *content2 = asm_token_get_content(&ast_bus_r->children[1].content_token);
                 if (content2 == NULL) {
                     free(content1);
                     break;
@@ -1146,14 +1186,14 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
                     ins.bus_r = R_C_PC;
                 } else {
                     printf("ERROR: ");
-                    asm_token_print_position(&ins.ref_token, src);
+                    asm_token_print_position(&ins.ref_token);
                     printf(" unknown read-from-bus value\r\n");
                 }
                 free(content1);
                 free(content2);
             } else {
                 printf("ERROR: ");
-                asm_token_print_position(&ins.ref_token, src);
+                asm_token_print_position(&ins.ref_token);
                 printf(" unknown read-from-bus value\r\n");
             }
             break;
@@ -1164,70 +1204,41 @@ instruction_t ins_from_ast(ast_element_t *ast_element, char *src) {
             break;
         default:
             printf("ERROR: ");
-            asm_token_print_position(&ins.ref_token, src);
+            asm_token_print_position(&ins.ref_token);
             printf(" unknown read-from-bus value\r\n");
             break;
     }
     return ins;
 }
 
-void ast_find_duplicate_defs(ast_element_t ast, char *src) {
-    for (ast_index_t i = 0; i < ast.children_count; i++) {
-        if (ast.children[i].type == AST_DEF) {
-            char *d1 = asm_token_get_content(&ast.children[i].content_token, src);
-            if (d1 == NULL) {
-                continue;
-            }
-            for (ast_index_t j = i + 1; j < ast.children_count; j++) {
-                if (ast.children[j].type == AST_DEF) {
-                    char *d2 = asm_token_get_content(&ast.children[j].content_token, src);
-                    if (d2 == NULL) {
-                        continue;
-                    }
-                    if (strcmp(d1, d2) == 0) {
-                        printf("WARNING: using ");
-                        asm_token_print_position(&ast.children[i].content_token, src);
-                        printf(", not ");
-                        asm_token_print_position(&ast.children[j].content_token, src);
-                        printf(" for duplicate def \"%s\"\r\n", d1);
-                        break;
-                    }
-                    free(d2);
-                }
-            }
-            free(d1);
-        }
-    }
-}
-
-void ast_deep_copy(ast_element_t *dest, ast_element_t *src) {
+void asm_ast_deep_copy(ast_element_t *dest, ast_element_t *src) {
     dest->type = src->type;
     dest->content_token = src->content_token;
     for (ast_index_t i = 0; i < src->children_count; i++) {
         ast_element_t *child = asm_parse_add_child(dest);
-        ast_deep_copy(child, &src->children[i]);
+        asm_ast_deep_copy(child, &src->children[i]);
     }
 }
 
-bool compare_token(token_t *token, const char *against, char *src) {
-    const char *p_t = &src[token->start];
+bool asm_compare_token(token_t *token, const char *against) {
+    const char *p_t = &token->src[token->start];
     const char *p_a = against;
     for (; *p_t != '\0' && *p_a != '\0'; p_t++, p_a++) {
         if (*p_t != *p_a) {
             return false;
         }
     }
-    if (p_t == &src[token->end] && *p_a == '\0') {
+    if (p_t == &token->src[token->end] && *p_a == '\0') {
         return true;
     }
     return false;
 }
 
-bool compare_tokens(token_t *token1, token_t *token2, char *src) {
+bool asm_compare_tokens(token_t *token1, token_t *token2) {
     index_t i1 = token1->start;
     index_t i2 = token2->start;
     for (; i1 < token1->end && i2 < token2->end; i1++, i2++) {
-        if (src[i1] != src[i2]) {
+        if (token1->src[i1] != token2->src[i2]) {
             return false;
         }
     }
@@ -1237,8 +1248,151 @@ bool compare_tokens(token_t *token1, token_t *token2, char *src) {
     return false;
 }
 
-void ast_create_def(ast_element_t *root, ast_element_t instruction, ast_element_t def_call, ast_type_t bus_type, char *src) {
-    char *d1 = asm_token_get_content(&def_call.content_token, src);
+bool asm_create_def_if_matching(ast_element_t *root, const char *d1, ast_element_t def, ast_element_t def_call, ast_type_t bus_type, bool *keep_a, bool *keep_b, bool *keep_c, bool *param_set, ast_element_t *ast_bus_w, ast_element_t *ast_bus_r) {
+    char *d2 = asm_token_get_content(&def.content_token);
+    if (d2 == NULL) {
+        printf("ERROR: out of memory for def content allocation\r\n");
+        return false;
+    }
+    if (strcmp(d1, d2) == 0) {
+        for (ast_index_t k = 0; k < def.children_count; k++) {
+            switch (def.children[k].type) {
+                case AST_DEF_CONFIG: {
+                    ast_element_t *keep_elements = NULL;
+                    ast_index_t keep_elements_count = 0;
+                    for (ast_index_t i = 0; i < def_call.children_count; i++) {
+                        if (def_call.children[i].type == AST_DEF_CONFIG) {
+                            for (ast_index_t j = 0; j < def_call.children[i].children_count; j++) {
+                                if (def_call.children[i].children[j].type == AST_CONTENT && asm_compare_token(&def_call.children[i].children[j].content_token, "keep")) {
+                                    keep_elements = &def_call.children[i].children[j + 2];
+                                    // TODO: this assumes all elements until end are part of keep, making following options impossible
+                                    keep_elements_count = def_call.children[i].children_count - j - 2;
+                                }
+                            }
+                        }
+                    }
+                    ast_element_t *temp_elements = NULL;
+                    ast_index_t temp_elements_count;
+                    for (ast_index_t l = 0; l < def.children[k].children_count; l++) {
+                        if (def.children[k].children[l].type == AST_CONTENT && asm_compare_token(&def.children[k].children[l].content_token, "temp")) {
+                            temp_elements = &def.children[k].children[l + 2];
+                            // TODO: this assumes all elements until end are part of temp, making following options impossible
+                            temp_elements_count = def.children[k].children_count - l - 2;
+                        }
+                    }
+                    if (temp_elements != NULL && keep_elements != NULL) {
+                        for (ast_index_t l = 0; l < keep_elements_count; l++) {
+                            bool is_temp = false;
+                            for (ast_index_t m = 0; m < temp_elements_count; m++) {
+                                if (asm_compare_tokens(&keep_elements[l].content_token, &temp_elements[m].content_token)) {
+                                    is_temp = true;
+                                    if (asm_compare_token(&keep_elements[l].content_token, "A")) {
+                                        *keep_a = true;
+                                    } else if (asm_compare_token(&keep_elements[l].content_token, "B")) {
+                                        *keep_b = true;
+                                    } else if (asm_compare_token(&keep_elements[l].content_token, "C")) {
+                                        *keep_c = true;
+                                    } else {
+                                        printf("ERROR: ");
+                                        asm_token_print_position(&keep_elements[l].content_token);
+                                        printf(" unknown keep/temp \"");
+                                        asm_token_content_print(&keep_elements[l].content_token);
+                                        printf("\"\r\n");
+                                    }
+                                }
+                            }
+                            if (!is_temp) {
+                                printf("INFO: ");
+                                asm_token_print_position(&keep_elements[l].content_token);
+                                printf(" keep \"");
+                                asm_token_content_print(&keep_elements[l].content_token);
+                                printf("\" not required, as is not overwritten\r\n");
+                            }
+                        }
+                    }
+                    // TODO: never restore read-from-bus param
+                    // TODO: restore instructions for write-to-bus-reg if input flag * is after !RS and write-to-bus-reg in temp (write-to-bus-reg for ADD/NOR is "A B" and COM "A")
+                    if (*keep_a) {
+                        asm_parse_add_child(root)->type = AST_STA;
+                    }
+                    if (*keep_b) {
+                        asm_parse_add_child(root)->type = AST_STB;
+                    }
+                    if (*keep_c) {
+                        asm_parse_add_child(root)->type = AST_STC;
+                    }
+                    break;
+                }
+                case AST_LABEL: {
+                    ast_element_t *new_el = asm_parse_add_child(root);
+                    asm_ast_deep_copy(new_el, &def.children[k]);
+                    break;
+                }
+                case AST_INSTRUCTION: {
+                    ast_element_t *new_el = asm_parse_add_child(root);
+                    asm_ast_deep_copy(new_el, &def.children[k]);
+                    
+                    ast_element_t *new_bus_w = NULL;
+                    ast_element_t *new_bus_r = NULL;
+                    for (index_t i = 0; i < new_el->children_count; i++) {
+                        if (new_el->children[i].type == AST_INS_BUS_WRITE) {
+                            new_bus_w = &new_el->children[i];
+                            if (new_bus_r != NULL) {
+                                break;
+                            }
+                        } else if (new_el->children[i].type == AST_INS_BUS_READ) {
+                            new_bus_r = &new_el->children[i];
+                            if (new_bus_w != NULL) {
+                                break;
+                            }
+                        }
+                    }
+                    if (new_bus_w != NULL) {
+                        if (new_bus_w->children_count > 0) {
+                            if (new_bus_w->children[0].type == AST_PARAM) {
+                                if (bus_type != AST_INS_BUS_READ || ast_bus_w == NULL) {
+                                    printf("ERROR: ");
+                                    asm_token_print_position(&def.content_token);
+                                    printf(" incorrect def usage (expected form A -> *DEF)\r\n");
+                                    break;
+                                }
+                                asm_ast_deep_copy(&new_bus_w->children[0], &ast_bus_w->children[0]);
+                                *param_set = true;
+                            }
+                        }
+                    }
+                    if (new_bus_r != NULL) {
+                        if (new_bus_r->children_count > 0) {
+                            if (new_bus_r->children[0].type == AST_PARAM) {
+                                if (bus_type != AST_INS_BUS_WRITE || ast_bus_r == NULL) {
+                                    printf("ERROR: ");
+                                    asm_token_print_position(&def.content_token);
+                                    printf(" incorrect def usage (expected form *DEF -> A)\r\n");
+                                    break;
+                                }
+                                asm_ast_deep_copy(&new_bus_r->children[0], &ast_bus_r->children[0]);
+                                *param_set = true;
+                            }
+                        }
+                    }
+                    break;
+                }
+                case AST_ASM_DIRECTIVE:
+                    // TODO: most likely !RS (restore all overwritten registers)
+                    break;
+                default:
+                    break;
+            }
+        }
+        free(d2);
+        return true;
+    }
+    free(d2);
+    return false;
+}
+
+void asm_create_def(ast_element_t *root, ast_element_t instruction, ast_element_t def_call, inc_context_t *inc_contexts, ast_index_t inc_contexts_count, ast_type_t bus_type) {
+    char *d1 = asm_token_get_content(&def_call.content_token);
     if (d1 == NULL) {
         printf("ERROR: out of memory for def call content allocation\r\n");
         return;
@@ -1258,149 +1412,28 @@ void ast_create_def(ast_element_t *root, ast_element_t instruction, ast_element_
             }
         }
     }
-    ast_element_t *keep_elements = NULL, *temp_elements = NULL;
-    ast_index_t keep_elements_count = 0, temp_elements_count = 0;
     bool keep_a = false, keep_b = false, keep_c = false;
-    for (ast_index_t i = 0; i < def_call.children_count; i++) {
-        if (def_call.children[i].type == AST_DEF_CONFIG) {
-            for (ast_index_t j = 0; j < def_call.children[i].children_count; j++) {
-                if (def_call.children[i].children[j].type == AST_CONTENT && compare_token(&def_call.children[i].children[j].content_token, "keep", src)) {
-                    keep_elements = &def_call.children[i].children[j + 2];
-                    // TODO: this assumes all elements until end are part of keep, making following options impossible
-                    keep_elements_count = def_call.children[i].children_count - j - 2;
-                }
-            }
-        }
-    }
     bool def_found = false;
     bool param_set = false;
     for (ast_index_t j = 0; j < root->children_count; j++) {
         if (root->children[j].type == AST_DEF) {
-            char *d2 = asm_token_get_content(&root->children[j].content_token, src);
-            if (d2 == NULL) {
-                printf("ERROR: out of memory for def content allocation\r\n");
-                free(d1);
-                return;
-            }
-            if (strcmp(d1, d2) == 0) {
-                for (ast_index_t k = 0; k < root->children[j].children_count; k++) {
-                    switch (root->children[j].children[k].type) {
-                        case AST_DEF_CONFIG: {
-                            for (ast_index_t l = 0; l < root->children[j].children[k].children_count; l++) {
-                                if (root->children[j].children[k].children[l].type == AST_CONTENT && compare_token(&root->children[j].children[k].children[l].content_token, "temp", src)) {
-                                    temp_elements = &root->children[j].children[k].children[l + 2];
-                                    // TODO: this assumes all elements until end are part of temp, making following options impossible
-                                    temp_elements_count = root->children[j].children[k].children_count - l - 2;
-                                }
-                            }
-                            if (temp_elements != NULL && keep_elements != NULL) {
-                                for (ast_index_t l = 0; l < keep_elements_count; l++) {
-                                    bool is_temp = false;
-                                    for (ast_index_t m = 0; m < temp_elements_count; m++) {
-                                        if (compare_tokens(&keep_elements[l].content_token, &temp_elements[m].content_token, src)) {
-                                            is_temp = true;
-                                            if (compare_token(&keep_elements[l].content_token, "A", src)) {
-                                                keep_a = true;
-                                            } else if (compare_token(&keep_elements[l].content_token, "B", src)) {
-                                                keep_b = true;
-                                            } else if (compare_token(&keep_elements[l].content_token, "C", src)) {
-                                                keep_c = true;
-                                            } else {
-                                                printf("ERROR: ");
-                                                asm_token_print_position(&keep_elements[l].content_token, src);
-                                                printf(" unknown keep/temp \"");
-                                                asm_token_content_print(&keep_elements[l].content_token, src);
-                                                printf("\"\r\n");
-                                            }
-                                        }
-                                    }
-                                    if (!is_temp) {
-                                        printf("INFO: ");
-                                        asm_token_print_position(&keep_elements[l].content_token, src);
-                                        printf(" keep \"");
-                                        asm_token_content_print(&keep_elements[l].content_token, src);
-                                        printf("\" not required, as is not overwritten\r\n");
-                                    }
-                                }
-                            }
-                            // TODO: never restore read-from-bus-reg (param)
-                            // TODO: restore instructions for write-to-bus-reg if input flag * is after !RS and write-to-bus-reg in temp (write-to-bus-reg for ADD/NOR is "A B" and COM "A")
-                            if (keep_a) {
-                                asm_parse_add_child(root)->type = AST_STA;
-                            }
-                            if (keep_b) {
-                                asm_parse_add_child(root)->type = AST_STB;
-                            }
-                            if (keep_c) {
-                                asm_parse_add_child(root)->type = AST_STC;
-                            }
-                            break;
-                        }
-                        case AST_LABEL: {
-                            ast_element_t *new_el = asm_parse_add_child(root);
-                            ast_deep_copy(new_el, &root->children[j].children[k]);
-                            break;
-                        }
-                        case AST_INSTRUCTION: {
-                            ast_element_t *new_el = asm_parse_add_child(root);
-                            ast_deep_copy(new_el, &root->children[j].children[k]);
-                            
-                            ast_element_t *new_bus_w = NULL;
-                            ast_element_t *new_bus_r = NULL;
-                            for (index_t i = 0; i < new_el->children_count; i++) {
-                                if (new_el->children[i].type == AST_INS_BUS_WRITE) {
-                                    new_bus_w = &new_el->children[i];
-                                    if (new_bus_r != NULL) {
-                                        break;
-                                    }
-                                } else if (new_el->children[i].type == AST_INS_BUS_READ) {
-                                    new_bus_r = &new_el->children[i];
-                                    if (new_bus_w != NULL) {
-                                        break;
-                                    }
-                                }
-                            }
-                            if (new_bus_w != NULL) {
-                                if (new_bus_w->children_count > 0) {
-                                    if (new_bus_w->children[0].type == AST_PARAM) {
-                                        if (bus_type != AST_INS_BUS_READ || ast_bus_w == NULL) {
-                                            printf("ERROR: ");
-                                            asm_token_print_position(&def_call.content_token, src);
-                                            printf(" incorrect def usage (expected PARAM -> *DEF instead of *DEF -> PARAM)\r\n");
-                                            break;
-                                        }
-                                        ast_deep_copy(&new_bus_w->children[0], &ast_bus_w->children[0]);
-                                        param_set = true;
-                                    }
-                                }
-                            }
-                            if (new_bus_r != NULL) {
-                                if (new_bus_r->children_count > 0) {
-                                    if (new_bus_r->children[0].type == AST_PARAM) {
-                                        if (bus_type != AST_INS_BUS_WRITE || ast_bus_r == NULL) {
-                                            printf("ERROR: ");
-                                            asm_token_print_position(&def_call.content_token, src);
-                                            printf(" incorrect def usage (expected *DEF -> PARAM instead of PARAM -> *DEF)\r\n");
-                                            break;
-                                        }
-                                        ast_deep_copy(&new_bus_r->children[0], &ast_bus_r->children[0]);
-                                        param_set = true;
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                        case AST_ASM_DIRECTIVE:
-                            // TODO: most likely !RS (restore all overwritten registers)
-                            break;
-                        default:
-                            break;
-                    }
-                }
+            if (asm_create_def_if_matching(root, d1, root->children[j], def_call, bus_type, &keep_a, &keep_b, &keep_c, &param_set, ast_bus_w, ast_bus_r)) {
                 def_found = true;
                 break;
             }
-            free(d2);
+        }
+    }
+    for (ast_index_t j = 0; j < inc_contexts_count; j++) {
+        for (ast_index_t k = 0; k < inc_contexts[j].ast.children_count; k++) {
+            if (inc_contexts[j].ast.children[k].type == AST_DEF) {
+                if (asm_create_def_if_matching(root, d1, inc_contexts[j].ast.children[k], def_call, bus_type, &keep_a, &keep_b, &keep_c, &param_set, ast_bus_w, ast_bus_r)) {
+                    def_found = true;
+                    break;
+                }
+            }
+        }
+        if (def_found) {
+            break;
         }
     }
     if (def_found) {
@@ -1413,20 +1446,47 @@ void ast_create_def(ast_element_t *root, ast_element_t instruction, ast_element_
         if (keep_c) {
             asm_parse_add_child(root)->type = AST_RSC;
         }
+        if (!param_set && bus_type != AST_INSTRUCTION) {
+            printf("ERROR: ");
+            asm_token_print_position(&def_call.content_token);
+            printf(" def \"%s\" does not take or give a parameter\r\n", d1);
+        }
     } else {
         printf("ERROR: ");
-        asm_token_print_position(&def_call.content_token, src);
+        asm_token_print_position(&def_call.content_token);
         printf(" def \"%s\" not found\r\n", d1);
-    }
-    if (!param_set && bus_type != AST_INSTRUCTION) {
-        printf("ERROR: ");
-        asm_token_print_position(&def_call.content_token, src);
-        printf(" def \"%s\" does not take or give a parameter\r\n", d1);
     }
     free(d1);
 }
 
-ast_element_t ast_resolve_defs(ast_element_t ast, char *src) {
+ast_element_t asm_resolve_defs(ast_element_t ast, inc_context_t *inc_contexts, ast_index_t inc_contexts_count) {
+    for (ast_index_t i = 0; i < ast.children_count; i++) {
+        if (ast.children[i].type == AST_DEF) {
+            char *d1 = asm_token_get_content(&ast.children[i].content_token);
+            if (d1 == NULL) {
+                continue;
+            }
+            for (ast_index_t j = i + 1; j < ast.children_count; j++) {
+                if (ast.children[j].type == AST_DEF) {
+                    char *d2 = asm_token_get_content(&ast.children[j].content_token);
+                    if (d2 == NULL) {
+                        continue;
+                    }
+                    if (strcmp(d1, d2) == 0) {
+                        printf("WARNING: using ");
+                        asm_token_print_position(&ast.children[i].content_token);
+                        printf(", not ");
+                        asm_token_print_position(&ast.children[j].content_token);
+                        printf(" for duplicate def \"%s\"\r\n", d1);
+                        break;
+                    }
+                    free(d2);
+                }
+            }
+            free(d1);
+        }
+    }
+    
     ast_element_t new_ast = {
         .children = NULL,
         .children_count = 0,
@@ -1456,7 +1516,7 @@ ast_element_t ast_resolve_defs(ast_element_t ast, char *src) {
                 if (bus_r->children_count > 0) {
                     bus_r_exists = true;
                     if (bus_r->children[0].type == AST_DEF_CALL) {
-                        ast_create_def(&new_ast, ast.children[i], bus_r->children[0], AST_INS_BUS_READ, src);
+                        asm_create_def(&new_ast, ast.children[i], bus_r->children[0], inc_contexts, inc_contexts_count, AST_INS_BUS_READ);
                         was_def_call = true;
                     }
                 }
@@ -1464,7 +1524,7 @@ ast_element_t ast_resolve_defs(ast_element_t ast, char *src) {
             if (bus_w != NULL) {
                 if (bus_w->children_count > 0) {
                     if (bus_w->children[0].type == AST_DEF_CALL) {
-                        ast_create_def(&new_ast, ast.children[i], bus_w->children[0], bus_r_exists ? AST_INS_BUS_WRITE : AST_INSTRUCTION, src);
+                        asm_create_def(&new_ast, ast.children[i], bus_w->children[0], inc_contexts, inc_contexts_count, bus_r_exists ? AST_INS_BUS_WRITE : AST_INSTRUCTION);
                         was_def_call = true;
                     }
                 }
@@ -1472,52 +1532,29 @@ ast_element_t ast_resolve_defs(ast_element_t ast, char *src) {
         }
         if (!was_def_call) {
             ast_element_t *new_el = asm_parse_add_child(&new_ast);
-            ast_deep_copy(new_el, &ast.children[i]);
+            asm_ast_deep_copy(new_el, &ast.children[i]);
         }
     }
 
     return new_ast;
 }
 
-int main(int argc, char *argv[]) {
-    char *src_path = (char *)default_src;
-
-#if !DEBUG
-    if (argc > 1) {
-        src_path = argv[1];
-    }
-#endif
-
-    char *src_buf = read_src(src_path);
-    if (src_buf == NULL) {
-        printf("ERROR: failed to read source file \"%s\"\r\n", src_path);
-        return 1;
-    }
-
-    ast_element_t ast = asm_parse(src_buf);
-    
-    // TODO: includes (find, parse, add instructions as ast elements with ref_token at include directive)
-    
-    ast_find_duplicate_defs(ast, src_buf);
-    for (uint8_t i = 0; i < DEF_RESOLVE_PASSES; i++) {
-        ast = ast_resolve_defs(ast, src_buf);
-    }
-    // asm_parse_debug_print(&ast, src_buf, 0);
-
+instruction_t *asm_instructions_from_ast(ast_element_t ast, index_t *instructions_count) {
+    (*instructions_count) = 0;
     instruction_t *instructions = NULL;
-    index_t instructions_count = 0;
     char *current_label = NULL;
+
     for (ast_index_t i = 0; i < ast.children_count; i++) {
         switch (ast.children[i].type) {
             case AST_INSTRUCTION:
-                instructions_count++;
-                instructions = realloc(instructions, instructions_count * sizeof(instruction_t));
+                (*instructions_count)++;
+                instructions = realloc(instructions, (*instructions_count) * sizeof(instruction_t));
                 if (instructions == NULL) {
                     printf("ERROR: out of memory during instruction allocation\r\n");
-                    return 1;
+                    return NULL;
                 }
-                instructions[instructions_count - 1] = ins_from_ast(&ast.children[i], src_buf);
-                instructions[instructions_count - 1].label = current_label;
+                instructions[(*instructions_count) - 1] = asm_instruction_from_ast(&ast.children[i]);
+                instructions[(*instructions_count) - 1].label = current_label;
                 current_label = NULL;
                 break;
             case AST_STA:
@@ -1526,13 +1563,13 @@ int main(int argc, char *argv[]) {
             case AST_RSA:
             case AST_RSB:
             case AST_RSC: {
-                instructions_count += 2;
-                instructions = realloc(instructions, instructions_count * sizeof(instruction_t));
+                (*instructions_count) += 2;
+                instructions = realloc(instructions, (*instructions_count) * sizeof(instruction_t));
                 if (instructions == NULL) {
                     printf("ERROR: out of memory during instruction allocation\r\n");
-                    return 1;
+                    return NULL;
                 }
-                instructions[instructions_count - 2] = (instruction_t){
+                instructions[(*instructions_count) - 2] = (instruction_t){
                     .bus_w = W_LIT,
                     .bus_r = R_RP,
                     .bus_w_label = NULL,
@@ -1540,7 +1577,7 @@ int main(int argc, char *argv[]) {
                     .literal = 0,
                     .ref_token = { .type = TOKEN_UNKNOWN, .start = 0, .end = 0 },
                 };
-                instructions[instructions_count - 1] = (instruction_t){
+                instructions[(*instructions_count) - 1] = (instruction_t){
                     .bus_w = W_INVALID,
                     .bus_r = R_INVALID,
                     .bus_w_label = NULL,
@@ -1549,19 +1586,19 @@ int main(int argc, char *argv[]) {
                     .ref_token = { .type = TOKEN_UNKNOWN, .start = 0, .end = 0 },
                 };
                 if (ast.children[i].type == AST_STA || ast.children[i].type == AST_RSA) {
-                    instructions[instructions_count - 2].literal = 0x11;
-                    instructions[instructions_count - 1].bus_w = ast.children[i].type == AST_STA ? W_A : W_RAM;
-                    instructions[instructions_count - 1].bus_r = ast.children[i].type == AST_STA ? R_RAM : W_A;
+                    instructions[(*instructions_count) - 2].literal = ASM_STA_ADDRESS;
+                    instructions[(*instructions_count) - 1].bus_w = ast.children[i].type == AST_STA ? W_A : W_RAM;
+                    instructions[(*instructions_count) - 1].bus_r = ast.children[i].type == AST_STA ? R_RAM : W_A;
                 }
                 if (ast.children[i].type == AST_STB || ast.children[i].type == AST_RSB) {
-                    instructions[instructions_count - 2].literal = 0x12;
-                    instructions[instructions_count - 1].bus_w = ast.children[i].type == AST_STB ? W_B : W_RAM;
-                    instructions[instructions_count - 1].bus_r = ast.children[i].type == AST_STB ? R_RAM : W_B;
+                    instructions[(*instructions_count) - 2].literal = ASM_STB_ADDRESS;
+                    instructions[(*instructions_count) - 1].bus_w = ast.children[i].type == AST_STB ? W_B : W_RAM;
+                    instructions[(*instructions_count) - 1].bus_r = ast.children[i].type == AST_STB ? R_RAM : W_B;
                 }
                 if (ast.children[i].type == AST_STC || ast.children[i].type == AST_RSC) {
-                    instructions[instructions_count - 2].literal = 0x13;
-                    instructions[instructions_count - 1].bus_w = ast.children[i].type == AST_STC ? W_C : W_RAM;
-                    instructions[instructions_count - 1].bus_r = ast.children[i].type == AST_STC ? R_RAM : W_C;
+                    instructions[(*instructions_count) - 2].literal = ASM_STC_ADDRESS;
+                    instructions[(*instructions_count) - 1].bus_w = ast.children[i].type == AST_STC ? W_C : W_RAM;
+                    instructions[(*instructions_count) - 1].bus_r = ast.children[i].type == AST_STC ? R_RAM : W_C;
                 }
                 break;
             }
@@ -1569,13 +1606,87 @@ int main(int argc, char *argv[]) {
                 if (current_label != NULL) {
                     free(current_label);
                 }
-                current_label = asm_token_get_content(&ast.children[i].content_token, src_buf);
+                current_label = asm_token_get_content(&ast.children[i].content_token);
                 break;
             default:
                 break;
         }
     }
-    ins_resolve_labels(instructions, instructions_count, src_buf);
+
+    return instructions;
+}
+
+void asm_free_inc_contexts(inc_context_t *inc_contexts, ast_index_t inc_contexts_count) {
+    for (ast_index_t i = 0; i < inc_contexts_count; i++) {
+        asm_parse_free_ast(&inc_contexts[i].ast);
+        if (inc_contexts[i].path != NULL) {
+            free(inc_contexts[i].path);
+        }
+        if (inc_contexts[i].src != NULL) {
+            free(inc_contexts[i].src);
+        }
+    }
+    free(inc_contexts);
+}
+
+inc_context_t *asm_resolve_inc_contexts(ast_element_t ast, ast_index_t *inc_contexts_count) {
+    inc_context_t *inc_contexts = NULL;
+    for (ast_index_t i = 0; i < ast.children_count; i++) {
+        if (ast.children[i].type == AST_INC) {
+            (*inc_contexts_count)++;
+            inc_contexts = realloc(inc_contexts, (*inc_contexts_count) * sizeof(inc_context_t));
+            if (inc_contexts == NULL) {
+                printf("ERROR: include context allocation failed\r\n");
+                return NULL;
+            }
+            inc_context_t *new_context = &inc_contexts[(*inc_contexts_count) - 1];
+            new_context->path = asm_token_get_content(&ast.children[i].content_token);
+            new_context->src = asm_read_src(new_context->path);
+            if (new_context->src == NULL) {
+                printf("ERROR: failed to read included source file \"%s\"\r\n", new_context->path);
+                continue;
+            }
+            new_context->ast = asm_parse(new_context->src);
+        }
+    }
+    return inc_contexts;
+}
+
+int main(int argc, char *argv[]) {
+    const char *src_path = default_src;
+
+#if !ASM_DEBUG
+    if (argc > 1) {
+        src_path = argv[1];
+    }
+#endif
+
+    char *src_buf = asm_read_src(src_path);
+    if (src_buf == NULL) {
+        printf("ERROR: failed to read source file \"%s\"\r\n", src_path);
+        return 1;
+    }
+
+    ast_element_t ast = asm_parse(src_buf);
+
+    ast_index_t inc_contexts_count = 0;
+    inc_context_t *inc_contexts = asm_resolve_inc_contexts(ast, &inc_contexts_count);
+    if (inc_contexts == NULL) {
+        printf("ERROR: failed resolving inc contexts\r\n");
+        return 1;
+    }
+    for (uint8_t i = 0; i < ASM_DEF_RESOLVE_PASSES; i++) {
+        ast = asm_resolve_defs(ast, inc_contexts, inc_contexts_count);
+    }
+
+    index_t instructions_count = 0;
+    instruction_t *instructions = asm_instructions_from_ast(ast, &instructions_count);
+    if (instructions == NULL) {
+        printf("ERROR: failed conversion from AST to instructions\r\n");
+        return 1;
+    }
+    asm_ins_resolve_labels(instructions, instructions_count);
+
     uint8_t *binary = NULL;
     index_t binary_size = 0;
     for (index_t i = 0; i < instructions_count; i++) {
@@ -1585,7 +1696,7 @@ int main(int argc, char *argv[]) {
             printf("ERROR: out of memory during binary allocation\r\n");
             return 1;
         }
-        uint8_t bin = ins_to_binary(&instructions[i]);
+        uint8_t bin = asm_ins_to_binary(&instructions[i]);
         binary[binary_size - (instructions[i].bus_w == W_LIT ? 3 : 1)] = bin;
         if (instructions[i].bus_w == W_LIT) {
             if (bin != 0x99) {
@@ -1598,34 +1709,52 @@ int main(int argc, char *argv[]) {
     }
 
     char *bin_path = malloc(strlen(src_path) + 4);
+    char *img_path = malloc(strlen(src_path) + 4);
     char *txt_path = malloc(strlen(src_path) + 4);
-    if (bin_path == NULL || txt_path == NULL) {
-        printf("ERROR: out of memory during binary path allocation\r\n");
+    if (bin_path == NULL || img_path == NULL || txt_path == NULL) {
+        printf("ERROR: out of memory during path allocation\r\n");
         return 1;
     }
     memcpy(bin_path, src_path, strlen(src_path) + 1);
+    memcpy(img_path, src_path, strlen(src_path) + 1);
     memcpy(txt_path, src_path, strlen(src_path) + 1);
     char *bin_iterator = bin_path + strlen(src_path) - 1;
+    char *img_iterator = img_path + strlen(src_path) - 1;
     char *txt_iterator = txt_path + strlen(src_path) - 1;
     while (*bin_iterator != '.' && bin_iterator != bin_path) {
         bin_iterator--;
+        img_iterator--;
         txt_iterator--;
     }
     bin_iterator[1] = 'b';
     bin_iterator[2] = 'i';
     bin_iterator[3] = 'n';
     bin_iterator[4] = '\0';
+    img_iterator[1] = 'i';
+    img_iterator[2] = 'm';
+    img_iterator[3] = 'g';
+    img_iterator[4] = '\0';
     txt_iterator[1] = 't';
     txt_iterator[2] = 'x';
     txt_iterator[3] = 't';
     txt_iterator[4] = '\0';
-    write_bin(bin_path, binary, binary_size);
-    write_txt(txt_path, instructions, instructions_count, src_buf, binary, binary_size);
+    asm_write_bin(bin_path, binary, binary_size);
+    asm_write_img(img_path, binary, binary_size);
+    asm_write_txt(txt_path, instructions, instructions_count, binary, binary_size);
 
+    if (binary != NULL) {
+        free(binary);
+    }
+    if (instructions != NULL) {
+        asm_ins_free(instructions, instructions_count);
+    }
+    if (inc_contexts != NULL) {
+        asm_free_inc_contexts(inc_contexts, inc_contexts_count);
+    }
     asm_parse_free_ast(&ast);
-    ins_free(instructions, instructions_count);
-    free(binary);
-    free(src_buf);
+    if (src_buf != NULL) {
+        free(src_buf);
+    }
 
     return 0;
 }
