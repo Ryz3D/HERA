@@ -4,15 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#define ASM_DEBUG 1
+#define ASM_DEBUG 0
 // maximum depth of nested def calls
 #define ASM_DEF_RESOLVE_PASSES 3
 #define ASM_STA_ADDRESS 0x11
 #define ASM_STB_ADDRESS 0x12
 #define ASM_STC_ADDRESS 0x13
 
-// const char *default_src = "./defaults.ha";
-const char *default_src = "./programs/assembly/def_test.ha";
+const char *asm_debug_src = "./programs/assembly/def_test.ha";
 
 typedef uint32_t index_t;
 
@@ -831,6 +830,9 @@ void asm_parse_free_ast(ast_element_t *ast) {
     for (ast_index_t i = 0; i < ast->children_count; i++) {
         asm_parse_free_ast(&ast->children[i]);
     }
+    if (ast->content_token.src != NULL) {
+        free(ast->content_token.src);
+    }
     if (ast->children != NULL) {
         free(ast->children);
     }
@@ -1352,8 +1354,8 @@ bool asm_create_def_if_matching(ast_element_t *root, const char *d1, ast_element
                             if (new_bus_w->children[0].type == AST_PARAM) {
                                 if (bus_type != AST_INS_BUS_READ || ast_bus_w == NULL) {
                                     printf("ERROR: ");
-                                    asm_token_print_position(&def.content_token);
-                                    printf(" incorrect def usage (expected form A -> *DEF)\r\n");
+                                    asm_token_print_position(&def_call.content_token);
+                                    printf(" incorrect def usage (expected form A -> %s)\r\n", d2);
                                     break;
                                 }
                                 asm_ast_deep_copy(&new_bus_w->children[0], &ast_bus_w->children[0]);
@@ -1366,8 +1368,8 @@ bool asm_create_def_if_matching(ast_element_t *root, const char *d1, ast_element
                             if (new_bus_r->children[0].type == AST_PARAM) {
                                 if (bus_type != AST_INS_BUS_WRITE || ast_bus_r == NULL) {
                                     printf("ERROR: ");
-                                    asm_token_print_position(&def.content_token);
-                                    printf(" incorrect def usage (expected form *DEF -> A)\r\n");
+                                    asm_token_print_position(&def_call.content_token);
+                                    printf(" incorrect def usage (expected form %s -> A)\r\n", d2);
                                     break;
                                 }
                                 asm_ast_deep_copy(&new_bus_r->children[0], &ast_bus_r->children[0]);
@@ -1586,6 +1588,7 @@ instruction_t *asm_instructions_from_ast(ast_element_t ast, index_t *instruction
                     .ref_token = { .type = TOKEN_UNKNOWN, .start = 0, .end = 0 },
                 };
                 if (ast.children[i].type == AST_STA || ast.children[i].type == AST_RSA) {
+                    // TODO: let this add just a def call, expect def in assembly. should work with src per token
                     instructions[(*instructions_count) - 2].literal = ASM_STA_ADDRESS;
                     instructions[(*instructions_count) - 1].bus_w = ast.children[i].type == AST_STA ? W_A : W_RAM;
                     instructions[(*instructions_count) - 1].bus_r = ast.children[i].type == AST_STA ? R_RAM : W_A;
@@ -1653,11 +1656,14 @@ inc_context_t *asm_resolve_inc_contexts(ast_element_t ast, ast_index_t *inc_cont
 }
 
 int main(int argc, char *argv[]) {
-    const char *src_path = default_src;
+    const char *src_path = asm_debug_src;
 
 #if !ASM_DEBUG
     if (argc > 1) {
         src_path = argv[1];
+    } else {
+        printf("ERROR: please specify the path of one assembly file (.ha) as a command line parameter\r\n");
+        return 1;
     }
 #endif
 

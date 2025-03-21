@@ -75,7 +75,7 @@
 # 34        # y = C
 # 06 00 51  # "loop" -> PC
 
-# !keep_all # implicitly keep A B C RP registers when calling def
+# !keep_all # implicitly [keep=A B C] for each def call
 # !no_opti # disable optimization by simulation
 
 inc defaults.ha;
