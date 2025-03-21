@@ -1677,16 +1677,16 @@ int main(int argc, char *argv[]) {
 
     ast_index_t inc_contexts_count = 0;
     inc_context_t *inc_contexts = asm_resolve_inc_contexts(ast, &inc_contexts_count);
-    if (inc_contexts == NULL) {
-        printf("ERROR: failed resolving inc contexts\r\n");
-        return 1;
-    }
     for (uint8_t i = 0; i < ASM_DEF_RESOLVE_PASSES; i++) {
         ast = asm_resolve_defs(ast, inc_contexts, inc_contexts_count);
     }
 
     index_t instructions_count = 0;
     instruction_t *instructions = asm_instructions_from_ast(ast, &instructions_count);
+    if (instructions_count == 0) {
+        printf("ERROR: there are no instructions in the given source file\r\n");
+        return 1;
+    }
     if (instructions == NULL) {
         printf("ERROR: failed conversion from AST to instructions\r\n");
         return 1;
