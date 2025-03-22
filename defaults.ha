@@ -147,11 +147,21 @@ def *POP[temp=A B] { # pop from stack to *
 }
 
 # flow control
-def *JSR { # jump to subroutine (* -> PC)
-    "jsr_[x+1]" -> *PUSH[keep=A B];
+def *JSR[temp=A B] { # jump to subroutine (* -> PC)
+#     "jsr_[x+1]" -> *PUSH[keep=A B];
+#     *      -> PC;
+# "jsr_[x]":
+    PC     -> A;
+    19     -> B;
+    ADD    -> *PUSH;
+    # !RS; # TODO: this varies in size... once indexed labels work, try implementing *JSR[keep=A] to pass A as parameter
     *      -> PC;
-"jsr_[x]":
 }
 def *RTS[temp=A B] { # return from subroutine
-    *POP   -> PC;
+    0xFF   -> RAM_P;
+    *INC;
+    !RS;
+    0xFF   -> RAM_P;
+    RAM    -> RAM_P;
+    RAM    -> PC;
 }

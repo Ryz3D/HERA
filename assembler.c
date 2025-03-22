@@ -5,8 +5,9 @@
 #include <string.h>
 
 #define ASM_DEBUG 0
+// TODO: bad error message if insufficient def passes "ERROR: missing AST_INS_BUS_WRITE and/or AST_INS_BUS_READ"
 // maximum depth of nested def calls
-#define ASM_DEF_RESOLVE_PASSES 3
+#define ASM_DEF_RESOLVE_PASSES 10
 #define ASM_STA_ADDRESS 0x11
 #define ASM_STB_ADDRESS 0x12
 #define ASM_STC_ADDRESS 0x13
@@ -362,7 +363,7 @@ uint8_t asm_ins_to_binary(instruction_t *ins) {
     return (((uint8_t)ins->bus_w & 0xF) << 4) | ((uint8_t)ins->bus_r & 0xF);
 }
 
-void asm_write_txt(const char *path, instruction_t *instructions, index_t instructions_count, uint8_t *binary, index_t binary_size) {
+void asm_write_txt(const char *path, inc_context_t *inc_contexts, ast_index_t inc_contexts_count, instruction_t *instructions, index_t instructions_count, uint8_t *binary, index_t binary_size) {
     printf("writing text file \"%s\"... ", path);
     FILE *f_txt = fopen(path, "wb");
 
@@ -379,19 +380,35 @@ void asm_write_txt(const char *path, instruction_t *instructions, index_t instru
         fprintf(f_txt, "(%04x) ", pc);
         uint8_t bin = binary[pc];
         fprintf(f_txt, "%02x", bin);
+        ast_index_t inc_context_i = 0;
+        bool inc_context_found = false;
+        for (ast_index_t j = 0; j < inc_contexts_count; j++) {
+            if (instructions[i].ref_token.src == inc_contexts[j].src) {
+                inc_context_i = j;
+                inc_context_found = true;
+                break;
+            }
+        }
         if (bin == 0x99) {
-            fprintf(f_txt, "        #  l. %u - INVALID INSTRUCTION\r\n", asm_token_get_line(&instructions[i].ref_token));
+            fprintf(f_txt, "       #  ");
+            if (inc_context_found) {
+                fprintf(f_txt, "%s  ", inc_contexts[inc_context_i].path);
+            }
+            fprintf(f_txt, "l. %u - INVALID INSTRUCTION\r\n", asm_token_get_line(&instructions[i].ref_token));
             pc++;
             continue;
         }
         if (instructions[i].bus_w == W_LIT) {
-            fprintf(f_txt, " %02x %02x", binary[pc + 1], binary[pc + 2]);
+            fprintf(f_txt, " %04x", instructions[i].literal);
         }
         if (bin != 0x99) {
             if (instructions[i].bus_w != W_LIT)
-                fprintf(f_txt, "      ");
-            fprintf(f_txt, "  # ");
-            fprintf(f_txt, " l. %u", asm_token_get_line(&instructions[i].ref_token));
+                fprintf(f_txt, "     ");
+            fprintf(f_txt, "  #  ");
+            if (inc_context_found) {
+                fprintf(f_txt, "%s  ", inc_contexts[inc_context_i].path);
+            }
+            fprintf(f_txt, "l. %u", asm_token_get_line(&instructions[i].ref_token));
         }
         fprintf(f_txt, "\r\n");
         pc += instructions[i].bus_w == W_LIT ? 3 : 1;
@@ -665,12 +682,31 @@ bool asm_parse_instruction(parser_state_t *state) {
             return false;
         }
         ast_element_t *new_child = asm_parse_add_content_child(&ast_ins->children[1], state->next_token);
-        if (state->next_token.type == TOKEN_STAR_KEYWORD) {
-            new_child->type = AST_DEF_CALL;
-        } else if (state->next_token.type == TOKEN_PARAM) {
+        if (state->next_token.type == TOKEN_PARAM) {
             new_child->type = AST_PARAM;
+            asm_parse_step_tokenizer(state);
+        } else if (state->next_token.type == TOKEN_STAR_KEYWORD) {
+            new_child->type = AST_DEF_CALL;
+            new_child->content_token = state->next_token;
+            asm_parse_step_tokenizer(state);
+    
+            if (state->next_token.type == TOKEN_OPEN_S) {
+                asm_parse_add_child(new_child);
+                new_child->children[0].type = AST_DEF_CONFIG;
+    
+                asm_parse_step_tokenizer(state);
+                while (state->next_token.type != TOKEN_CLOSE_S) {
+                    if (state->next_token.type == TOKEN_END) {
+                        return false;
+                    }
+                    asm_parse_add_content_child(&new_child->children[0], state->next_token);
+                    asm_parse_step_tokenizer(state);
+                }
+                asm_parse_step_tokenizer(state);
+            }
+        } else {
+            asm_parse_step_tokenizer(state);
         }
-        asm_parse_step_tokenizer(state);
     }
 
     return true;
@@ -943,7 +979,7 @@ void asm_ins_resolve_labels(instruction_t *ins, index_t ins_count) {
             if (ins[i].bus_w != W_LIT) {
                 ins[i].bus_w = W_INVALID;
                 asm_token_print_position(&ins[i].ref_token);
-                printf(" ERROR: can't resolve label \"%s\"\r\n", ins[i].bus_w_label);
+                printf(" ERROR: can't resolve label %s\r\n", ins[i].bus_w_label);
             }
         }
     }
@@ -1249,7 +1285,7 @@ bool asm_compare_tokens(token_t *token1, token_t *token2) {
     return false;
 }
 
-bool asm_create_def_if_matching(ast_element_t *root, const char *d1, ast_element_t def, ast_element_t def_call, ast_type_t bus_type, bool *keep_a, bool *keep_b, bool *keep_c, bool *param_set, ast_element_t *ast_bus_w, ast_element_t *ast_bus_r) {
+bool asm_create_def_if_matching(ast_element_t *root, const char *d1, ast_element_t def, ast_element_t def_call, ast_type_t bus_type, bool *keep_a, bool *keep_b, bool *keep_c, bool *rs_done, bool *param_set, ast_element_t *ast_bus_w, ast_element_t *ast_bus_r) {
     char *d2 = asm_token_get_content(&def.content_token);
     if (d2 == NULL) {
         printf("ERROR: out of memory for def content allocation\r\n");
@@ -1379,9 +1415,41 @@ bool asm_create_def_if_matching(ast_element_t *root, const char *d1, ast_element
                     }
                     break;
                 }
-                case AST_ASM_DIRECTIVE:
-                    // TODO: most likely !RS (restore all overwritten registers)
+                case AST_ASM_DIRECTIVE: {
+                    if (def.children[k].children_count < 1) {
+                        printf("ERROR: ");
+                        asm_token_print_position(&def.content_token);
+                        printf(" directive without content\r\n");
+                    }
+
+                    char *directive = asm_token_get_content(&def.children[k].children[0].content_token);
+                    if (directive == NULL) {
+                        printf("ERROR: ");
+                        asm_token_print_position(&def.children[k].children[0].content_token);
+                        printf(" failed directive content allocation\r\n");
+                        break;
+                    }
+                    
+                    if (directive[0] == 'R' && directive[1] == 'S' && directive[2] == '\0') {
+                        *rs_done = true;
+                        
+                        if (*keep_a) {
+                            asm_parse_add_child(root)->type = AST_RSA;
+                        }
+                        if (*keep_b) {
+                            asm_parse_add_child(root)->type = AST_RSB;
+                        }
+                        if (*keep_c) {
+                            asm_parse_add_child(root)->type = AST_RSC;
+                        }
+                    } else {
+                        printf("ERROR: ");
+                        asm_token_print_position(&def.children[k].children[0].content_token);
+                        printf(" unknown directive \"%s\"\r\n", directive);
+                    }
+                    free(directive);
                     break;
+                }
                 default:
                     break;
             }
@@ -1416,10 +1484,11 @@ void asm_create_def(ast_element_t *root, ast_element_t instruction, ast_element_
     }
     bool keep_a = false, keep_b = false, keep_c = false;
     bool def_found = false;
+    bool rs_done = false;
     bool param_set = false;
     for (ast_index_t j = 0; j < root->children_count; j++) {
         if (root->children[j].type == AST_DEF) {
-            if (asm_create_def_if_matching(root, d1, root->children[j], def_call, bus_type, &keep_a, &keep_b, &keep_c, &param_set, ast_bus_w, ast_bus_r)) {
+            if (asm_create_def_if_matching(root, d1, root->children[j], def_call, bus_type, &keep_a, &keep_b, &keep_c, &rs_done, &param_set, ast_bus_w, ast_bus_r)) {
                 def_found = true;
                 break;
             }
@@ -1428,7 +1497,7 @@ void asm_create_def(ast_element_t *root, ast_element_t instruction, ast_element_
     for (ast_index_t j = 0; j < inc_contexts_count; j++) {
         for (ast_index_t k = 0; k < inc_contexts[j].ast.children_count; k++) {
             if (inc_contexts[j].ast.children[k].type == AST_DEF) {
-                if (asm_create_def_if_matching(root, d1, inc_contexts[j].ast.children[k], def_call, bus_type, &keep_a, &keep_b, &keep_c, &param_set, ast_bus_w, ast_bus_r)) {
+                if (asm_create_def_if_matching(root, d1, inc_contexts[j].ast.children[k], def_call, bus_type, &keep_a, &keep_b, &keep_c, &rs_done, &param_set, ast_bus_w, ast_bus_r)) {
                     def_found = true;
                     break;
                 }
@@ -1439,14 +1508,16 @@ void asm_create_def(ast_element_t *root, ast_element_t instruction, ast_element_
         }
     }
     if (def_found) {
-        if (keep_a) {
-            asm_parse_add_child(root)->type = AST_RSA;
-        }
-        if (keep_b) {
-            asm_parse_add_child(root)->type = AST_RSB;
-        }
-        if (keep_c) {
-            asm_parse_add_child(root)->type = AST_RSC;
+        if (!rs_done) {
+            if (keep_a) {
+                asm_parse_add_child(root)->type = AST_RSA;
+            }
+            if (keep_b) {
+                asm_parse_add_child(root)->type = AST_RSB;
+            }
+            if (keep_c) {
+                asm_parse_add_child(root)->type = AST_RSC;
+            }
         }
         if (!param_set && bus_type != AST_INSTRUCTION) {
             printf("ERROR: ");
@@ -1745,7 +1816,7 @@ int main(int argc, char *argv[]) {
     txt_iterator[4] = '\0';
     asm_write_bin(bin_path, binary, binary_size);
     asm_write_img(img_path, binary, binary_size);
-    asm_write_txt(txt_path, instructions, instructions_count, binary, binary_size);
+    asm_write_txt(txt_path, inc_contexts, inc_contexts_count, instructions, instructions_count, binary, binary_size);
 
     if (binary != NULL) {
         free(binary);
