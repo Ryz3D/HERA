@@ -1,24 +1,76 @@
 import sys
 
-bus_symbol = '->'
-f_debug = False
-f_help = False
-f_path = None
+# TODO:
+#  - heap block info
 
-for f in sys.argv[1:]:
-    if f in ['-d', '--debug']:
-        f_debug = True
-    elif f in ['-h', '--help']:
-        f_help = True
+arg_debug = False
+arg_help = False
+arg_path = None
+
+i = 1
+while i < len(sys.argv):
+    if sys.argv[i] in ['-d', '--debug']:
+        arg_debug = True
+    elif sys.argv[i] in ['-h', '--help']:
+        arg_help = True
     else:
-        f_path = f
+        arg_path = sys.argv[i]
+    i += 1
 
-if f_help:
+if arg_help:
     print("""HERA simulator
-""")
+
+Arguments:
+-v / --verbose [0...4 optional]     |  Specify amount of output (default: 1)
+-h / --help                         |  This screen
+
+Specify path to output file (.txt) of HERA assembler""")
     exit()
 
-def sim(program, debug=False, init_state=None):
+def parse_txt(path: str):
+    if path.endswith('.ha') or path.endswith('.bin') or path.endswith('.img'):
+        path = '.'.join(path.split('.')[:-1])
+    if '.' not in path.split('/')[-1]:
+        path += '.txt'
+    with open(path) as f:
+        raw = f.read()
+    src_cache = {}
+    program = []
+    current_label = ''
+    for l in raw.split('\n'):
+        if l.startswith('# "'):
+            current_label = list(filter(None, l.split('"')))[1]
+        elif l.startswith('('):
+            pc_ins_lit = list(filter(None, list(filter(None, l.split('#')))[0].split(' ')))
+            instruction = {
+                'PC': int(pc_ins_lit[0][1:-1], 16),
+                'instruction': int(pc_ins_lit[1], 16),
+            }
+            if len(pc_ins_lit) > 2:
+                instruction['literal'] = int(pc_ins_lit[2], 16)
+            if current_label:
+                instruction['label'] = current_label
+                current_label = ''
+            comment = list(filter(None, list(filter(None, l.split('#')))[1].split(' ')))
+            src_path = '.'.join(path.split('.')[:-1]) + '.ha'
+            if len(comment) > 2:
+                src_path = comment[0]
+            if src_path not in src_cache:
+                with open(src_path) as f:
+                    src_cache[src_path] = f.read()
+                src_cache[src_path] = src_cache[src_path].split('\n')
+            line = int(comment[-1]) - 1
+            if line == 0:
+                instruction['src'] = '(generated code)'
+            else:
+                instruction['src'] = src_cache[src_path][line].strip()
+            program.append(instruction)
+    return program
+
+def hex_w(n, width=2):
+    return hex(n)[2:].upper().zfill(width)
+
+def sim(program, debug=False, init_state=None, max_steps=10000):
     if init_state is None:
         sim_state = {
             'A': 0,
@@ -34,16 +86,17 @@ def sim(program, debug=False, init_state=None):
         sim_state = init_state
         sim_state['program'].extend(program)
 
-    for i in range(10000):
-        pc = sim_state['PC']
-        if pc >= len(sim_state['program']):
+    for i in range(max_steps):
+        instruction = list(filter(lambda ins: ins['PC'] == sim_state['PC'], program))
+        if len(instruction) == 0:
             return sim_state
-        ins = sim_state['program'][pc]
-        ins_w = ins >> 4
-        ins_r = ins & 0xF
+        instruction = instruction[0]
+
+        ins_w = instruction['instruction'] >> 4
+        ins_r = instruction['instruction'] & 0xF
         sim_state['PC'] += 1
         if ins_w == 0x0:
-            bus = (sim_state['program'][sim_state['PC']] << 8) | sim_state['program'][sim_state['PC'] + 1]
+            bus = instruction['literal']
             sim_state['PC'] += 2
         elif ins_w == 0x1:
             bus = sim_state['A']
@@ -78,7 +131,10 @@ def sim(program, debug=False, init_state=None):
             if bus & 0x8000 != 0:
                 sim_state['STAT'] |= 0x4
         else:
-            print('unknown write nibble', ins_w, 'at', pc)
+            print('unknown write nibble', ins_w, 'at', instruction['PC'])
+
+        bus &= 0xFFFF
+
         if ins_r == 0x0:
             pass
         elif ins_r == 0x1:
@@ -91,11 +147,11 @@ def sim(program, debug=False, init_state=None):
             sim_state['RAM'][sim_state['RP']] = bus
             if sim_state['RP'] == 0x200:
                 if debug:
-                    print('OUTPUT', hex(bus))
+                    print('\t\t  ', '[OUTPUT] ', hex_w(bus, 2), '(' + chr(bus) + ')')
                 else:
                     print(chr(bus), end='')
             elif debug:
-                print('RAM', hex(bus), '->', hex(sim_state['RP']))
+                print('\t\t  ', '[RAM] ', 'd', hex_w(bus, 4), '->', 'a', hex_w(sim_state['RP'], 4))
         elif ins_r == 0x5:
             sim_state['RP'] = bus
         elif ins_r == 0x6:
@@ -118,89 +174,18 @@ def sim(program, debug=False, init_state=None):
             if sim_state['STAT'] & 0x4 != 0:
                 sim_state['PC'] = bus
         else:
-            print('unknown read nibble', ins_r, 'at', pc)
+            print('unknown read nibble', ins_r, 'at', instruction['PC'])
+        
+        if debug:
+            print('(' + hex_w(instruction['PC'], 4) + ')', hex_w(instruction['instruction'], 2), '\t', instruction['src'])
+
+        if '"end"  -> PC;' in instruction['src']:
+            break
 
     return sim_state
 
-def parse_logisim(raw):
-    raw = '\n'.join(raw.replace('\r', '').split('\n')[1:]).replace('\n', ' ')
-    bin_list = []
-    for s in raw.split(' '):
-        if s != '':
-            if '*' in s:
-                bin_list.extend(int(s.split('*')[0]) * [int(s.split('*')[1], 16)])
-            else:
-                bin_list.append(int(s, 16))
-    return bin_list
-
-def load_logisim(path):
-    with open(path) as f:
-        raw = f.read()
-    return parse_logisim(raw)
-
-fallback_contructs = {
-    "*STA": "0x11 -> RAM_P; A -> RAM",
-    "*RSA": "0x11 -> RAM_P; RAM -> A",
-    "*STB": "0x12 -> RAM_P; B -> RAM",
-    "*RSA": "0x12 -> RAM_P; RAM -> B",
-    "*STC": "0x13 -> RAM_P; C -> RAM",
-    "*RSA": "0x13 -> RAM_P; RAM -> C",
-}
-
-# for store/restore calls, try finding def of STA,RSA,... after all includes else search in fallback (above) else panic
-
-# TODO: never restore read-from-bus-reg (param)
-# TODO: restore instructions for write-to-bus-reg if input flag * is after !RS and write-to-bus-reg in temp (write-to-bus-reg for ADD/NOR is "A B" and COM "A")
-# TODO: insert RSA, RSB at !RS
-
-# i think this is irrelevant:
-    # TODO: check if parent construct already contains neccessary keep instructions (could be done by optimization)
-    # TODO: PUSH calls DEC (temp=A B), check for this
-
-"""
-def build_construct (code index or virtual (nested) raw construct call -> syntax (code/construct definition) to instances)
-var reg_invalidated (can be set by self or nested construct [correction: i think only self])
-var reg_restore (can be set by call, definition, nested definition?)
--> construct_context
--> sum length of all instances (instruction/construct calls) in construct definition (you could just append to assembly output and count instructions)
--> resolve construct calls during preprocessing (output assembly)
--> construct definition file (included like header file)
-"""
-
-# ; as \n
-# "label":
-# "label" -> PC
-# "label_[x]":
-# "label_[x+1]"
-# number parsing:
-# decimal signed
-# hexadecimal 0x octal 0o binary 0b -> count bits (may have zeropage addressing)
-
-# bus writing stuff (A -> B)
-# # comments
-# * params
-# literals (complicated int parsing)
-# labels (pre-compile with placeholders, mark indices and corresponding label)
-# constructs
-#  check if input or output or none (warning logs)
-#  store/restore based on rules (do we need to keep it? do we need to restore it? where?)
-# optimize .ha before export by simulating runtime register values (constant/register -> known, ADD/COM/NOR -> unknown) and removing second write, disable by option -> WATCH OUT FOR JUMPS (simply reset to unknown state at labels?)
-# disassembler for analysing results
-
-# .ha syntax highlighting (auto-complete would be very nice)
-
-if f_path is None:
-    state = None
-    while True:
-        try:
-            prog_in = parse_logisim('v2.0 raw\n' + input('> '))
-            if len(prog_in) > 0:
-                state = sim(prog_in, f_debug, state)
-                if f_debug:
-                    debug_state = {**state}
-                    debug_state.pop('RAM')
-                    print(debug_state)
-        except Exception as ex:
-            print(ex)
+if arg_path is None:
+    print('Please specify path to assembler output file (.txt)')
 else:
-    sim(load_logisim(f_path), f_debug)
+    program = parse_txt(arg_path)
+    sim(program, True)

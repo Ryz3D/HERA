@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
+/*
+TODO:
+- optimize .ha before export by simulating runtime register values (constant/register -> known, ADD/COM/NOR -> unknown) and removing second write, disable by option -> WATCH OUT FOR JUMPS (simply reset to unknown state at labels?)
+- .ha syntax highlighting (auto-complete would be very nice)
+*/
+
 #define ASM_DEBUG 0
 // TODO: bad error message if insufficient def passes "ERROR: missing AST_INS_BUS_WRITE and/or AST_INS_BUS_READ"
 // maximum depth of nested def calls

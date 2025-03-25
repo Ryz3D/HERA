@@ -127,10 +127,10 @@ def *ROR { #TODO; }
 
 # stack
 # stack pointer 0xFF
-# stack start   0xFFEF (descending)
+# stack start   0xFFFF (descending)
 def *RSS {
     0xFF   -> RAM_P;
-    0xFEFF -> RAM;
+    0xFFFF -> RAM;
 }
 def *PUSH[temp=A B] { # push * to stack
     0xFF   -> RAM_P;

@@ -28,7 +28,7 @@ A slightly less simple CPU than the [SPEAR](https:#github.com/Ryz3D/SPEAR). It i
 
 ### Instructions
 
-The upper 4 bits of any instruction signify control lines for writing to the internal bus (everything but `STAT` uses 16-bit values):
+The upper 4 bits of any instruction represent control lines for writing to the internal bus (everything but `STAT` uses 16-bit values):
 | Upper nibble | Name    | Description              |
 | ------------ | ------- | ------------------------ |
 | 0            | `LIT`   | Literal value            |
@@ -50,7 +50,7 @@ The upper 4 bits of any instruction signify control lines for writing to the int
 
 If a literal is selected to be written to the bus (upper nibble is 0x0), it is read from the two bytes after the instruction in big-endian format.
 
-The lower 4 bits signify control lines for reading from the internal bus:
+The lower 4 bits represent control lines for reading from the internal bus:
 | Lower nibble | Name      | Description                          |
 | ------------ | --------- | ------------------------------------ |
 | 0            | `VOID`    | Ignore value                         |
