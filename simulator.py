@@ -1,8 +1,5 @@
 import sys
 
-# TODO:
-#  - heap block info
-
 arg_debug = False
 arg_help = False
 arg_path = None
@@ -62,13 +59,23 @@ def parse_txt(path: str):
             line = int(comment[-1]) - 1
             if line == 0:
                 instruction['src'] = '(generated code)'
+                instruction['src_path'] = ''
+                instruction['src_line'] = 0
             else:
                 instruction['src'] = src_cache[src_path][line].strip()
+                instruction['src_path'] = src_path
+                instruction['src_line'] = line + 1
             program.append(instruction)
     return program
 
-def hex_w(n, width=2):
-    return hex(n)[2:].upper().zfill(width)
+def hex_w(n: int, width=4, lower=False):
+    s = hex(n)[2:].upper().zfill(width)
+    return s.lower() if lower else s
+
+asm_mapping = [
+    ['',     'A', 'B', 'C', 'RAM', 'RAM_P', 'PC', 'STAT', '?', '?', 'ADD', 'COM', 'NOR', '?', '?', '?'],
+    ['VOID', 'A', 'B', 'C', 'RAM', 'RAM_P', 'PC', 'STAT', '?', '?', 'A B', 'B RAM_P', 'C PC', 'PC_C', 'PC_Z', 'PC_N'],
+]
 
 def sim(program, debug=False, init_state=None, max_steps=10000):
     if init_state is None:
@@ -77,7 +84,7 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
             'B': 0,
             'C': 0,
             'RAM': [0] * (2 ** 16),
-            'RP': 0,
+            'RAM_P': 0,
             'PC': 0,
             'STAT': 0,
             'program': program,
@@ -92,9 +99,31 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
             return sim_state
         instruction = instruction[0]
 
-        ins_w = instruction['instruction'] >> 4
+        ins_w = (instruction['instruction'] >> 4) & 0xF
         ins_r = instruction['instruction'] & 0xF
+
+        if debug:
+            s_pc = f'({hex_w(instruction["PC"], lower=True)})'
+            s_ins = hex_w(instruction['instruction'], 2, lower=True)
+            if ins_w == 0x0:
+                s_ins += f' {hex_w(instruction["literal"], lower=True)}'
+            else:
+                s_ins += ' ' * 5
+            s_asm = instruction['src']
+            if s_asm == '(generated code)':
+                if ins_w == 0x0:
+                    s_asm = f'0x{hex_w(instruction["literal"])}'
+                else:
+                    s_asm = asm_mapping[0][ins_w]
+                s_asm += f' -> {asm_mapping[1][ins_r]};'
+            # TODO: maybe show both generated and found assembly in case they differ
+            s_src = f'{instruction["src_path"]}:{instruction["src_line"]}'
+            s_spaces = ' ' * (35 - len(s_asm))
+
+        debug_extras = []
+
         sim_state['PC'] += 1
+
         if ins_w == 0x0:
             bus = instruction['literal']
             sim_state['PC'] += 2
@@ -105,9 +134,9 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
         elif ins_w == 0x3:
             bus = sim_state['C']
         elif ins_w == 0x4:
-            bus = sim_state['RAM'][sim_state['RP']]
+            bus = sim_state['RAM'][sim_state['RAM_P']]
         elif ins_w == 0x5:
-            bus = sim_state['RP']
+            bus = sim_state['RAM_P']
         elif ins_w == 0x6:
             bus = sim_state['PC']
         elif ins_w == 0x7:
@@ -144,16 +173,16 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
         elif ins_r == 0x3:
             sim_state['C'] = bus
         elif ins_r == 0x4:
-            sim_state['RAM'][sim_state['RP']] = bus
-            if sim_state['RP'] == 0x200:
+            sim_state['RAM'][sim_state['RAM_P']] = bus
+            if sim_state['RAM_P'] == 0x200:
                 if debug:
-                    print('\t\t  ', '[OUTPUT] ', hex_w(bus, 2), '(' + chr(bus) + ')')
+                    debug_extras.append(f'[OUTPUT]  {hex_w(bus)} ({chr(bus)})')
                 else:
                     print(chr(bus), end='')
             elif debug:
-                print('\t\t  ', '[RAM] ', 'd', hex_w(bus, 4), '->', 'a', hex_w(sim_state['RP'], 4))
+                debug_extras.append(f'[RAM]  d {hex_w(bus)} -> a {hex_w(sim_state["RAM_P"])}')
         elif ins_r == 0x5:
-            sim_state['RP'] = bus
+            sim_state['RAM_P'] = bus
         elif ins_r == 0x6:
             sim_state['PC'] = bus
         elif ins_r == 0x7:
@@ -161,7 +190,7 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
         elif ins_r == 0xA:
             sim_state['A'] = sim_state['B'] = bus
         elif ins_r == 0xB:
-            sim_state['B'] = sim_state['RP'] = bus
+            sim_state['B'] = sim_state['RAM_P'] = bus
         elif ins_r == 0xC:
             sim_state['C'] = sim_state['PC'] = bus
         elif ins_r == 0xD:
@@ -175,12 +204,35 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
                 sim_state['PC'] = bus
         else:
             print('unknown read nibble', ins_r, 'at', instruction['PC'])
-        
+
+        if sim_state['RAM'][0x00FF] != 0 and sim_state['RAM'][0x00FF] < 0xFFFF:
+            stack = sim_state['RAM'][sim_state['RAM'][0x00FF] + 1:]
+            s_stack = ' '.join(reversed([hex_w(s) for s in stack]))
+            debug_extras.append(f'[STACK]  {s_stack}')
+
+        # TODO
+        if False:
+            debug_extras.append(f'[HEAP]  ')
+
         if debug:
-            print('(' + hex_w(instruction['PC'], 4) + ')', hex_w(instruction['instruction'], 2), '\t', instruction['src'])
+            print(f'{s_pc}  {s_ins}       {s_asm}{s_spaces}| {s_src}')
+            print()
+            print('[A___] [B___] [C___] [RAM_P] [RAM_] [STAT]')
+            print(f' {hex_w(sim_state["A"])}   {hex_w(sim_state["B"])}   {hex_w(sim_state["C"])}   {hex_w(sim_state["RAM_P"])}    {hex_w(sim_state["RAM"][sim_state["RAM_P"]])}   {hex_w(sim_state["STAT"], 2)}')
+            print()
+            if len(debug_extras) > 0:
+                print('\n'.join(debug_extras))
+            print('\n' * (3 - len(debug_extras)))
 
         if '"end"  -> PC;' in instruction['src']:
+            print('Program ended')
             break
+        
+        if debug:
+            try:
+                input()
+            except KeyboardInterrupt:
+                break
 
     return sim_state
 
