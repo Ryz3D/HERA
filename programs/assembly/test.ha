@@ -36,9 +36,9 @@ def *R_PARAM4 {
 
 "main":
     *RSS;
+    *MALLOC_INIT;
 
-    0x0010 -> A;
-    A      -> *W_PARAM1;
+    0x0010 -> *W_PARAM1;
     "malloc" -> *JSR;
     A      -> *GPOA;
 

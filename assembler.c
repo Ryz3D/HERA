@@ -1760,7 +1760,7 @@ int main(int argc, char *argv[]) {
     index_t instructions_count = 0;
     instruction_t *instructions = asm_instructions_from_ast(ast, &instructions_count);
     if (instructions_count == 0) {
-        printf("ERROR: there are no instructions in the given source file\r\n");
+        printf("ERROR: there are no instructions outside of defs in the given source file (nothing to do)\r\n");
         return 1;
     }
     if (instructions == NULL) {

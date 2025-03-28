@@ -1,5 +1,5 @@
 # heap 0x0040 (first header at 0x003c) - 0xfbff (size 0xfbbf)
-# stack 0xfc00 - 0xffff (size 0x03ff)
+# stack 0xfc00 - 0xffff (size 0x0400)
 # header:
 #  -4: previous block (address after header)
 #  -3: next block (address after header)
@@ -22,7 +22,7 @@ def *MALLOC {
     # TODO: check if next == 0 -> return 0
     # TODO: check if capacity < PARAM1 -> loop some more
     # TODO: if not -> set up size and next
-    1      -> A;
+    0x80   -> A;
     *RTS[keep=A];
 }
 
