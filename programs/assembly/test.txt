@@ -1,96 +1,90 @@
 # "main":
 (0000) 05 00ff  #  defaults.ha  l. 132
 (0003) 04 ffff  #  defaults.ha  l. 133
-(0006) 01 0001  #  programs/assembly/malloc.ha  l. 12
-(0009) 0b 003c  #  programs/assembly/malloc.ha  l. 13
-(000c) 04 0000  #  programs/assembly/malloc.ha  l. 13
-(000f) ab       #  programs/assembly/malloc.ha  l. 14
-(0010) 04 0000  #  programs/assembly/malloc.ha  l. 14
-(0013) ab       #  programs/assembly/malloc.ha  l. 15
-(0014) 04 fbbf  #  programs/assembly/malloc.ha  l. 15
-(0017) ab       #  programs/assembly/malloc.ha  l. 16
-(0018) 04 0000  #  programs/assembly/malloc.ha  l. 16
-(001b) 61       #  defaults.ha  l. 154
-(001c) 02 0013  #  defaults.ha  l. 155
-(001f) 05 00ff  #  defaults.ha  l. 136
-(0022) 45       #  defaults.ha  l. 137
-(0023) a4       #  defaults.ha  l. 156
-(0024) 05 00ff  #  defaults.ha  l. 139
-(0027) 42       #  defaults.ha  l. 64
-(0028) 01 ffff  #  defaults.ha  l. 65
-(002b) a4       #  defaults.ha  l. 66
-(002c) 06 0050  #  l. 41
-(002f) 05 0020  #  l. 5
-(0032) 04 0010  #  l. 43
-(0035) 61       #  defaults.ha  l. 154
-(0036) 02 0013  #  defaults.ha  l. 155
-(0039) 05 00ff  #  defaults.ha  l. 136
-(003c) 45       #  defaults.ha  l. 137
-(003d) a4       #  defaults.ha  l. 156
-(003e) 05 00ff  #  defaults.ha  l. 139
-(0041) 42       #  defaults.ha  l. 64
-(0042) 01 ffff  #  defaults.ha  l. 65
-(0045) a4       #  defaults.ha  l. 66
-(0046) 06 009c  #  l. 44
-(0049) 05 0200  #  defaults.ha  l. 73
-(004c) 14       #  l. 45
+(0006) 01 0001  #  programs/assembly/malloc.ha  l. 14
+(0009) 0b 003c  #  programs/assembly/malloc.ha  l. 15
+(000c) 04 0000  #  programs/assembly/malloc.ha  l. 15
+(000f) ab       #  programs/assembly/malloc.ha  l. 16
+(0010) 04 0000  #  programs/assembly/malloc.ha  l. 16
+(0013) ab       #  programs/assembly/malloc.ha  l. 17
+(0014) 04 fbbf  #  programs/assembly/malloc.ha  l. 17
+(0017) ab       #  programs/assembly/malloc.ha  l. 18
+(0018) 04 0000  #  programs/assembly/malloc.ha  l. 18
+(001b) 01 0010  #  l. 8
+(001e) 05 0011  #  defaults.ha  l. 7
+(0021) 14       #  defaults.ha  l. 8
+(0022) 61       #  defaults.ha  l. 154
+(0023) 02 0013  #  defaults.ha  l. 155
+(0026) 05 00ff  #  defaults.ha  l. 136
+(0029) 45       #  defaults.ha  l. 137
+(002a) a4       #  defaults.ha  l. 156
+(002b) 05 00ff  #  defaults.ha  l. 139
+(002e) 42       #  defaults.ha  l. 64
+(002f) 01 ffff  #  defaults.ha  l. 65
+(0032) a4       #  defaults.ha  l. 66
+(0033) 06 0089  #  l. 10
+(0036) 05 0200  #  defaults.ha  l. 73
+(0039) 14       #  l. 11
 # "end":
-(004d) 06 004d  #  l. 48
+(003a) 06 003a  #  l. 14
 # "testinit":
-(0050) 01 0001  #  l. 51
-(0053) 0b 003c  #  l. 52
-(0056) 04 0000  #  l. 52
-(0059) ab       #  l. 53
-(005a) 04 1040  #  l. 53
-(005d) ab       #  l. 54
-(005e) 04 0ffc  #  l. 54
-(0061) ab       #  l. 55
-(0062) 04 0010  #  l. 55
-(0065) 01 0001  #  l. 57
-(0068) 0b 103c  #  l. 58
-(006b) 04 0000  #  l. 58
-(006e) ab       #  l. 59
-(006f) 04 2040  #  l. 59
-(0072) ab       #  l. 60
-(0073) 04 0ffc  #  l. 60
-(0076) ab       #  l. 61
-(0077) 04 0020  #  l. 61
-(007a) 01 0001  #  l. 63
-(007d) 0b 203c  #  l. 64
-(0080) 04 0000  #  l. 64
-(0083) ab       #  l. 65
-(0084) 04 0000  #  l. 65
-(0087) ab       #  l. 66
-(0088) 04 ebbf  #  l. 66
-(008b) ab       #  l. 67
-(008c) 04 2000  #  l. 67
-(008f) 05 00ff  #  defaults.ha  l. 161
-(0092) 42       #  defaults.ha  l. 59
-(0093) 01 0001  #  defaults.ha  l. 60
-(0096) a4       #  defaults.ha  l. 61
-(0097) 05 00ff  #  defaults.ha  l. 164
-(009a) 45       #  defaults.ha  l. 165
-(009b) 46       #  defaults.ha  l. 166
+(003d) 01 0001  #  l. 17
+(0040) 0b 003c  #  l. 18
+(0043) 04 0000  #  l. 18
+(0046) ab       #  l. 19
+(0047) 04 1040  #  l. 19
+(004a) ab       #  l. 20
+(004b) 04 0ffc  #  l. 20
+(004e) ab       #  l. 21
+(004f) 04 0010  #  l. 21
+(0052) 01 0001  #  l. 23
+(0055) 0b 103c  #  l. 24
+(0058) 04 0000  #  l. 24
+(005b) ab       #  l. 25
+(005c) 04 2040  #  l. 25
+(005f) ab       #  l. 26
+(0060) 04 0ffc  #  l. 26
+(0063) ab       #  l. 27
+(0064) 04 0020  #  l. 27
+(0067) 01 0001  #  l. 29
+(006a) 0b 203c  #  l. 30
+(006d) 04 0000  #  l. 30
+(0070) ab       #  l. 31
+(0071) 04 0000  #  l. 31
+(0074) ab       #  l. 32
+(0075) 04 ebbf  #  l. 32
+(0078) ab       #  l. 33
+(0079) 04 2000  #  l. 33
+(007c) 05 00ff  #  defaults.ha  l. 161
+(007f) 42       #  defaults.ha  l. 59
+(0080) 01 0001  #  defaults.ha  l. 60
+(0083) a4       #  defaults.ha  l. 61
+(0084) 05 00ff  #  defaults.ha  l. 164
+(0087) 45       #  defaults.ha  l. 165
+(0088) 46       #  defaults.ha  l. 166
 # "malloc":
-(009c) 05 0040  #  programs/assembly/malloc.ha  l. 21
+(0089) 05 0011  #  defaults.ha  l. 11
+(008c) 41       #  defaults.ha  l. 12
+(008d) 05 0040  #  programs/assembly/malloc.ha  l. 24
 # "malloc_loop_find_empty":
-(009f) 01 0080  #  programs/assembly/malloc.ha  l. 27
-(00a2) 05 0011  #  l. 1
-(00a5) 14       #  l. 1
-(00a6) 05 00ff  #  defaults.ha  l. 161
-(00a9) 42       #  defaults.ha  l. 59
-(00aa) 01 0001  #  defaults.ha  l. 60
-(00ad) a4       #  defaults.ha  l. 61
-(00ae) 05 0011  #  l. 1
-(00b1) 41       #  l. 1
-(00b2) 05 00ff  #  defaults.ha  l. 164
-(00b5) 45       #  defaults.ha  l. 165
-(00b6) 46       #  defaults.ha  l. 166
+(0090) 12       #  programs/assembly/malloc.ha  l. 31
+(0091) a1       #  programs/assembly/malloc.ha  l. 32
+(0092) 05 0011  #  l. 1
+(0095) 14       #  l. 1
+(0096) 05 00ff  #  defaults.ha  l. 161
+(0099) 42       #  defaults.ha  l. 59
+(009a) 01 0001  #  defaults.ha  l. 60
+(009d) a4       #  defaults.ha  l. 61
+(009e) 05 0011  #  l. 1
+(00a1) 41       #  l. 1
+(00a2) 05 00ff  #  defaults.ha  l. 164
+(00a5) 45       #  defaults.ha  l. 165
+(00a6) 46       #  defaults.ha  l. 166
 # "mfree":
-(00b7) 05 00ff  #  defaults.ha  l. 161
-(00ba) 42       #  defaults.ha  l. 59
-(00bb) 01 0001  #  defaults.ha  l. 60
-(00be) a4       #  defaults.ha  l. 61
-(00bf) 05 00ff  #  defaults.ha  l. 164
-(00c2) 45       #  defaults.ha  l. 165
-(00c3) 46       #  defaults.ha  l. 166
+(00a7) 05 00ff  #  defaults.ha  l. 161
+(00aa) 42       #  defaults.ha  l. 59
+(00ab) 01 0001  #  defaults.ha  l. 60
+(00ae) a4       #  defaults.ha  l. 61
+(00af) 05 00ff  #  defaults.ha  l. 164
+(00b2) 45       #  defaults.ha  l. 165
+(00b3) 46       #  defaults.ha  l. 166

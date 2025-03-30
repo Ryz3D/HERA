@@ -872,7 +872,8 @@ void asm_parse_free_ast(ast_element_t *ast) {
         asm_parse_free_ast(&ast->children[i]);
     }
     if (ast->content_token.src != NULL) {
-        free(ast->content_token.src);
+        // TODO: this will currently be freed by asm_free_inc_contexts, but in case of extra allocated sources this should be implemented. currently fails due to multiple free calls with the same src
+        // free(ast->content_token.src);
     }
     if (ast->children != NULL) {
         free(ast->children);
@@ -1837,6 +1838,8 @@ int main(int argc, char *argv[]) {
     if (src_buf != NULL) {
         free(src_buf);
     }
+
+    printf("done\r\n");
 
     return 0;
 }

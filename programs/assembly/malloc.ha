@@ -8,6 +8,8 @@
 
 # note: if you wanted to set up a block after a current one, add capacity (address right after current data) then add header size 4 (address after next header). this will need to be checked based on current address and capacity -> fits if 0xfbff-addr-capacity-4 >= newsize
 
+# TODO: 50/50 split static/heap space?
+
 def *MALLOC_INIT {
     1      -> A;
     0x003c -> B RAM_P; 0x0000 -> RAM; # previous block
@@ -17,6 +19,7 @@ def *MALLOC_INIT {
 }
 
 def *MALLOC {
+    *RSA;
     # start at first malloc block
     0x0040 -> RAM_P;
 "malloc_loop_find_empty":
@@ -24,7 +27,9 @@ def *MALLOC {
     # TODO: check if next == 0 -> return 0
     # TODO: check if capacity < PARAM1 -> loop some more
     # TODO: if not -> set up size and next
-    0x80   -> A;
+    
+    A -> B;
+    ADD -> A;
     *RTS[keep=A];
 }
 

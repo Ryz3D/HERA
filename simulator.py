@@ -24,6 +24,7 @@ Arguments:
 Specify path to output file (.txt) of HERA assembler""")
     exit()
 
+# TODO: fallback to .bin/.img parsing if .txt does not exist
 def parse_txt(path: str):
     if path.endswith('.ha') or path.endswith('.bin') or path.endswith('.img'):
         path = '.'.join(path.split('.')[:-1])
@@ -109,16 +110,17 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
                 s_ins += f' {hex_w(instruction["literal"], lower=True)}'
             else:
                 s_ins += ' ' * 5
+            # TODO: maybe show both generated and found assembly in case they differ
             s_asm = instruction['src']
+            s_src = f'{instruction["src_path"]}:{instruction["src_line"]}'
             if s_asm == '(generated code)':
                 if ins_w == 0x0:
                     s_asm = f'0x{hex_w(instruction["literal"])}'
                 else:
                     s_asm = asm_mapping[0][ins_w]
                 s_asm += f' -> {asm_mapping[1][ins_r]};'
-            # TODO: maybe show both generated and found assembly in case they differ
-            s_src = f'{instruction["src_path"]}:{instruction["src_line"]}'
-            s_spaces = ' ' * (35 - len(s_asm))
+                s_src = instruction['src']
+            s_spaces = ' ' * (16 + len(s_ins))
 
         debug_extras = [''] * 6
 
@@ -176,11 +178,11 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
             sim_state['RAM'][sim_state['RAM_P']] = bus
             if sim_state['RAM_P'] == 0x200:
                 if debug:
-                    debug_extras[1] = f'[GPOA]   {hex_w(bus)} ({chr(bus)})'
+                    debug_extras[1] = f'[GPOA_]  {hex_w(bus)} ({chr(bus)})'
                 else:
                     print(chr(bus), end='')
             elif debug:
-                debug_extras[2] = f'[RAM]    d {hex_w(bus)} -> a {hex_w(sim_state["RAM_P"])}'
+                debug_extras[2] = f'[RAM_W]  d {hex_w(bus)} -> a {hex_w(sim_state["RAM_P"])}'
         elif ins_r == 0x5:
             sim_state['RAM_P'] = bus
         elif ins_r == 0x6:
@@ -205,13 +207,16 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
         else:
             print('unknown read nibble', ins_r, 'at', instruction['PC'])
 
-        if sim_state['RAM'][0x00FF] != 0 and sim_state['RAM'][0x00FF] < 0xFFFF:
+        if sim_state['RAM'][0x00FF] != 0:
             stack = sim_state['RAM'][sim_state['RAM'][0x00FF] + 1:]
             s_stack = ' '.join(reversed([hex_w(s) for s in stack]))
             s_overflow = ''
             if sim_state['RAM'][0x00FF] < 0xfc00:
                 s_overflow = 'OVERFLOW '
-            debug_extras[3] = f'[STACK]  {s_overflow}{s_stack}'
+            s_empty = ''
+            if sim_state['RAM'][0x00FF] == 0xFFFF:
+                s_empty = '----'
+            debug_extras[3] = f'[STACK]  {s_overflow}{s_stack}{s_empty}'
 
         heap_blocks = []
         heap_address = 0x0040
@@ -226,14 +231,15 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
             heap_address = heap_blocks[-1]['next']
         if heap_blocks[0]['capacity'] > 0:
             s_blocks = ' '.join([f'{hex_w(s["address"])} ({s["size"]}/{s["capacity"]})' for s in heap_blocks])
-            debug_extras[4] = f'[HEAP]   {s_blocks}'
+            debug_extras[4] = f'[HEAP_]  {s_blocks}'
 
         if debug:
             # TODO: check if instruction in def or label before, show def name or label
-            print(f'{s_pc}  {s_ins}       {s_asm}{s_spaces}| {s_src}')
+            print(f'{s_spaces}{s_src}')
+            print(f'{s_pc}   {s_ins}       {s_asm}')
             print()
             print('[A___] [B___] [C___] [RAM_P] [RAM_] [STAT]')
-            print(f' {hex_w(sim_state["A"])}   {hex_w(sim_state["B"])}   {hex_w(sim_state["C"])}   {hex_w(sim_state["RAM_P"])}    {hex_w(sim_state["RAM"][sim_state["RAM_P"]])}   {hex_w(sim_state["STAT"], 2)}')
+            print(f' {hex_w(sim_state["A"])}   {hex_w(sim_state["B"])}   {hex_w(sim_state["C"])}   {hex_w(sim_state["RAM_P"])}    {hex_w(sim_state["RAM"][sim_state["RAM_P"]])}    {hex_w(sim_state["STAT"], 2)}')
             print('\n'.join(debug_extras))
 
         if '"end"  -> PC;' in instruction['src']:
