@@ -1,51 +1,96 @@
 # "main":
 (0000) 05 00ff  #  defaults.ha  l. 132
 (0003) 04 ffff  #  defaults.ha  l. 133
-(0006) 01 0001  #  programs/assembly/malloc.ha  l. 10
-(0009) 0b 003c  #  programs/assembly/malloc.ha  l. 11
-(000c) 04 0000  #  programs/assembly/malloc.ha  l. 11
-(000f) ab       #  programs/assembly/malloc.ha  l. 12
-(0010) 04 0000  #  programs/assembly/malloc.ha  l. 12
-(0013) ab       #  programs/assembly/malloc.ha  l. 13
-(0014) 04 fbbf  #  programs/assembly/malloc.ha  l. 13
-(0017) ab       #  programs/assembly/malloc.ha  l. 14
-(0018) 04 0000  #  programs/assembly/malloc.ha  l. 14
-(001b) 05 0020  #  l. 5
-(001e) 04 0010  #  l. 41
-(0021) 61       #  defaults.ha  l. 154
-(0022) 02 0013  #  defaults.ha  l. 155
-(0025) 05 00ff  #  defaults.ha  l. 136
-(0028) 45       #  defaults.ha  l. 137
-(0029) a4       #  defaults.ha  l. 156
-(002a) 05 00ff  #  defaults.ha  l. 139
-(002d) 42       #  defaults.ha  l. 64
-(002e) 01 ffff  #  defaults.ha  l. 65
-(0031) a4       #  defaults.ha  l. 66
-(0032) 06 003c  #  l. 42
-(0035) 05 0200  #  defaults.ha  l. 73
-(0038) 14       #  l. 43
+(0006) 01 0001  #  programs/assembly/malloc.ha  l. 12
+(0009) 0b 003c  #  programs/assembly/malloc.ha  l. 13
+(000c) 04 0000  #  programs/assembly/malloc.ha  l. 13
+(000f) ab       #  programs/assembly/malloc.ha  l. 14
+(0010) 04 0000  #  programs/assembly/malloc.ha  l. 14
+(0013) ab       #  programs/assembly/malloc.ha  l. 15
+(0014) 04 fbbf  #  programs/assembly/malloc.ha  l. 15
+(0017) ab       #  programs/assembly/malloc.ha  l. 16
+(0018) 04 0000  #  programs/assembly/malloc.ha  l. 16
+(001b) 61       #  defaults.ha  l. 154
+(001c) 02 0013  #  defaults.ha  l. 155
+(001f) 05 00ff  #  defaults.ha  l. 136
+(0022) 45       #  defaults.ha  l. 137
+(0023) a4       #  defaults.ha  l. 156
+(0024) 05 00ff  #  defaults.ha  l. 139
+(0027) 42       #  defaults.ha  l. 64
+(0028) 01 ffff  #  defaults.ha  l. 65
+(002b) a4       #  defaults.ha  l. 66
+(002c) 06 0050  #  l. 41
+(002f) 05 0020  #  l. 5
+(0032) 04 0010  #  l. 43
+(0035) 61       #  defaults.ha  l. 154
+(0036) 02 0013  #  defaults.ha  l. 155
+(0039) 05 00ff  #  defaults.ha  l. 136
+(003c) 45       #  defaults.ha  l. 137
+(003d) a4       #  defaults.ha  l. 156
+(003e) 05 00ff  #  defaults.ha  l. 139
+(0041) 42       #  defaults.ha  l. 64
+(0042) 01 ffff  #  defaults.ha  l. 65
+(0045) a4       #  defaults.ha  l. 66
+(0046) 06 009c  #  l. 44
+(0049) 05 0200  #  defaults.ha  l. 73
+(004c) 14       #  l. 45
 # "end":
-(0039) 06 0039  #  l. 46
+(004d) 06 004d  #  l. 48
+# "testinit":
+(0050) 01 0001  #  l. 51
+(0053) 0b 003c  #  l. 52
+(0056) 04 0000  #  l. 52
+(0059) ab       #  l. 53
+(005a) 04 1040  #  l. 53
+(005d) ab       #  l. 54
+(005e) 04 0ffc  #  l. 54
+(0061) ab       #  l. 55
+(0062) 04 0010  #  l. 55
+(0065) 01 0001  #  l. 57
+(0068) 0b 103c  #  l. 58
+(006b) 04 0000  #  l. 58
+(006e) ab       #  l. 59
+(006f) 04 2040  #  l. 59
+(0072) ab       #  l. 60
+(0073) 04 0ffc  #  l. 60
+(0076) ab       #  l. 61
+(0077) 04 0020  #  l. 61
+(007a) 01 0001  #  l. 63
+(007d) 0b 203c  #  l. 64
+(0080) 04 0000  #  l. 64
+(0083) ab       #  l. 65
+(0084) 04 0000  #  l. 65
+(0087) ab       #  l. 66
+(0088) 04 ebbf  #  l. 66
+(008b) ab       #  l. 67
+(008c) 04 2000  #  l. 67
+(008f) 05 00ff  #  defaults.ha  l. 161
+(0092) 42       #  defaults.ha  l. 59
+(0093) 01 0001  #  defaults.ha  l. 60
+(0096) a4       #  defaults.ha  l. 61
+(0097) 05 00ff  #  defaults.ha  l. 164
+(009a) 45       #  defaults.ha  l. 165
+(009b) 46       #  defaults.ha  l. 166
 # "malloc":
-(003c) 05 0040  #  programs/assembly/malloc.ha  l. 19
+(009c) 05 0040  #  programs/assembly/malloc.ha  l. 21
 # "malloc_loop_find_empty":
-(003f) 01 0080  #  programs/assembly/malloc.ha  l. 25
-(0042) 05 0011  #  l. 1
-(0045) 14       #  l. 1
-(0046) 05 00ff  #  defaults.ha  l. 161
-(0049) 42       #  defaults.ha  l. 59
-(004a) 01 0001  #  defaults.ha  l. 60
-(004d) a4       #  defaults.ha  l. 61
-(004e) 05 0011  #  l. 1
-(0051) 41       #  l. 1
-(0052) 05 00ff  #  defaults.ha  l. 164
-(0055) 45       #  defaults.ha  l. 165
-(0056) 46       #  defaults.ha  l. 166
+(009f) 01 0080  #  programs/assembly/malloc.ha  l. 27
+(00a2) 05 0011  #  l. 1
+(00a5) 14       #  l. 1
+(00a6) 05 00ff  #  defaults.ha  l. 161
+(00a9) 42       #  defaults.ha  l. 59
+(00aa) 01 0001  #  defaults.ha  l. 60
+(00ad) a4       #  defaults.ha  l. 61
+(00ae) 05 0011  #  l. 1
+(00b1) 41       #  l. 1
+(00b2) 05 00ff  #  defaults.ha  l. 164
+(00b5) 45       #  defaults.ha  l. 165
+(00b6) 46       #  defaults.ha  l. 166
 # "mfree":
-(0057) 05 00ff  #  defaults.ha  l. 161
-(005a) 42       #  defaults.ha  l. 59
-(005b) 01 0001  #  defaults.ha  l. 60
-(005e) a4       #  defaults.ha  l. 61
-(005f) 05 00ff  #  defaults.ha  l. 164
-(0062) 45       #  defaults.ha  l. 165
-(0063) 46       #  defaults.ha  l. 166
+(00b7) 05 00ff  #  defaults.ha  l. 161
+(00ba) 42       #  defaults.ha  l. 59
+(00bb) 01 0001  #  defaults.ha  l. 60
+(00be) a4       #  defaults.ha  l. 61
+(00bf) 05 00ff  #  defaults.ha  l. 164
+(00c2) 45       #  defaults.ha  l. 165
+(00c3) 46       #  defaults.ha  l. 166

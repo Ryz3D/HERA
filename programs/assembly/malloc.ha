@@ -1,10 +1,12 @@
-# heap 0x0040 (first header at 0x003c) - 0xfbff (size 0xfbbf)
+# heap 0x0040 (first header at 0x003c) - 0xfbff (size 0xfbc0)
 # stack 0xfc00 - 0xffff (size 0x0400)
 # header:
 #  -4: previous block (address after header)
 #  -3: next block (address after header)
 #  -2: capacity in address-space
 #  -1: used size in address-space
+
+# note: if you wanted to set up a block after a current one, add capacity (address right after current data) then add header size 4 (address after next header). this will need to be checked based on current address and capacity -> fits if 0xfbff-addr-capacity-4 >= newsize
 
 def *MALLOC_INIT {
     1      -> A;
@@ -27,5 +29,6 @@ def *MALLOC {
 }
 
 def *MFREE {
+    # TODO: merge previous and next free blocks
     *RTS;
 }

@@ -229,7 +229,7 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
             debug_extras[4] = f'[HEAP]   {s_blocks}'
 
         if debug:
-            # TODO: check if instruction in def, show def name
+            # TODO: check if instruction in def or label before, show def name or label
             print(f'{s_pc}  {s_ins}       {s_asm}{s_spaces}| {s_src}')
             print()
             print('[A___] [B___] [C___] [RAM_P] [RAM_] [STAT]')
