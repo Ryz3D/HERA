@@ -25,7 +25,22 @@
         {
             "label": "simulate test.ha",
             "type": "shell",
-            "command": "assembler programs/assembly/test.ha && python simulator.py programs/assembly/test.ha",
+            "command": "assembler programs/assembly/test.ha && python simulator.py -d programs/assembly/test.ha",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "simulate test.ha (fast)",
+            "type": "shell",
+            "command": "assembler programs/assembly/test.ha && python simulator.py -d -ns programs/assembly/test.ha",
             "options": {
                 "cwd": "${workspaceFolder}"
             },

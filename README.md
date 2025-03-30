@@ -41,9 +41,9 @@ The upper 4 bits of any instruction represent control lines for writing to the i
 | 7            | `STAT`  | Status register (8-bit)  |
 | 8            | -       | -                        |
 | 9            | -       | -                        |
-| A            | `ADD`   | Adder (`A` + `B`)        |
-| B            | `COM`   | Two's complement (-`A`)  |
-| C            | `NOR`   | NOR gate ~(`A` \| `B`)   |
+| A            | `ADD`   | Add (`A + B`)            |
+| B            | `COM`   | Two's complement (`-A`)  |
+| C            | `NOR`   | NOR (`~(A \| B)`)        |
 | D            | -       | -                        |
 | E            | -       | -                        |
 | F            | -       | -                        |
@@ -69,6 +69,17 @@ The lower 4 bits represent control lines for reading from the internal bus:
 | D            | `PC_C`    | Program counter if carry flag set    |
 | E            | `PC_Z`    | Program counter if zero flag set     |
 | F            | `PC_N`    | Program counter if negative flag set |
+
+### Status register
+
+The flags of the status register `STAT` are written on any arithmetic operation (`ADD`, `COM`, `NOR`) and any instruction writing the `A` register. Arithmetic operations overwrite all flags, instructions writing the `A` register overwrite only the zero and negative flags.
+
+| Bit         | Description     |
+| ----------- | --------------- |
+| 0 (LSB)     | Carry (PC_C)    |
+| 1           | Zero (PC_Z)     |
+| 2           | Negative (PC_N) |
+| 3...8 (MSB) | Reserved        |
 
 ### Assembly code Examples
 
@@ -143,3 +154,14 @@ Some larger programs showcasing some optimized instructions (all instructions in
 (56) 14         # Output A
 (57) 06 00 45   # Loop lookup to continuously update (PC = 0x0045)
 ```
+
+### Default memory map
+
+| Start      | End        | Description |
+| ---------- | ---------- | ----------- |
+| ``0x0000`` | ``0x00ff`` | Zeropage |
+| ``0x0100`` | ``0x01ff`` | Input registers (default GPIA at 0x0100) |
+| ``0x0200`` | ``0x02ff`` | Output registers (default GPOA at 0x0200) |
+| ``0x0300`` | ``0x7fff`` | Statically allocated RAM |
+| ``0x8004`` | ``0xfbff`` | Dynamically allocated RAM |
+| ``0xfc00`` | ``0xffff`` | Stack (starting at 0xffff) |

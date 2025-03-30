@@ -77,7 +77,7 @@ def *ARRINIT { # init writing to an array at address *
     1      -> A;
     *      -> B RAM_P;
 }
-def *ARR { # append * to array (call *ARRINIT first)
+def *ARR { # append * to array (use *ARRINIT first)
     *      -> RAM;
     ADD    -> B RAM_P;
 }
@@ -128,7 +128,7 @@ def *ROR { #TODO; }
 # stack
 # stack pointer 0xFF
 # stack start   0xFFFF (descending)
-def *RSS {
+def *STACK_INIT {
     0xFF   -> RAM_P;
     0xFFFF -> RAM;
 }

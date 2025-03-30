@@ -1,6 +1,7 @@
 import sys
 
 arg_debug = False
+arg_nostep = False
 arg_help = False
 arg_path = None
 
@@ -8,6 +9,8 @@ i = 1
 while i < len(sys.argv):
     if sys.argv[i] in ['-d', '--debug']:
         arg_debug = True
+    elif sys.argv[i] in ['-ns', '--nostep']:
+        arg_nostep = True
     elif sys.argv[i] in ['-h', '--help']:
         arg_help = True
     else:
@@ -78,7 +81,7 @@ asm_mapping = [
     ['VOID', 'A', 'B', 'C', 'RAM', 'RAM_P', 'PC', 'STAT', '?', '?', 'A B', 'B RAM_P', 'C PC', 'PC_C', 'PC_Z', 'PC_N'],
 ]
 
-def sim(program, debug=False, init_state=None, max_steps=10000):
+def sim(program, init_state=None, max_steps=10000):
     if init_state is None:
         sim_state = {
             'A': 0,
@@ -94,6 +97,8 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
         sim_state = init_state
         sim_state['program'].extend(program)
 
+    output = []
+
     for i in range(max_steps):
         instruction = list(filter(lambda ins: ins['PC'] == sim_state['PC'], program))
         if len(instruction) == 0:
@@ -103,7 +108,7 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
         ins_w = (instruction['instruction'] >> 4) & 0xF
         ins_r = instruction['instruction'] & 0xF
 
-        if debug:
+        if arg_debug:
             s_pc = f'({hex_w(instruction["PC"], lower=True)})'
             s_ins = hex_w(instruction['instruction'], 2, lower=True)
             if ins_w == 0x0:
@@ -170,6 +175,11 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
             pass
         elif ins_r == 0x1:
             sim_state['A'] = bus
+            sim_state['STAT'] &= ~0b110
+            if bus == 0:
+                sim_state['STAT'] |= 0x2
+            if bus & 0x8000 != 0:
+                sim_state['STAT'] |= 0x4
         elif ins_r == 0x2:
             sim_state['B'] = bus
         elif ins_r == 0x3:
@@ -177,11 +187,10 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
         elif ins_r == 0x4:
             sim_state['RAM'][sim_state['RAM_P']] = bus
             if sim_state['RAM_P'] == 0x200:
-                if debug:
-                    debug_extras[1] = f'[GPOA_]  {hex_w(bus)} ({chr(bus)})'
-                else:
-                    print(chr(bus), end='')
-            elif debug:
+                output.append(bus)
+                if not arg_debug and chr(output[-1]).isascii():
+                    print(chr(output[-1]), end='')
+            elif arg_debug:
                 debug_extras[2] = f'[RAM_W]  d {hex_w(bus)} -> a {hex_w(sim_state["RAM_P"])}'
         elif ins_r == 0x5:
             sim_state['RAM_P'] = bus
@@ -191,6 +200,11 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
             sim_state['STAT'] = bus & 0xFF
         elif ins_r == 0xA:
             sim_state['A'] = sim_state['B'] = bus
+            sim_state['STAT'] &= ~0b110
+            if bus == 0:
+                sim_state['STAT'] |= 0x2
+            if bus & 0x8000 != 0:
+                sim_state['STAT'] |= 0x4
         elif ins_r == 0xB:
             sim_state['B'] = sim_state['RAM_P'] = bus
         elif ins_r == 0xC:
@@ -207,46 +221,58 @@ def sim(program, debug=False, init_state=None, max_steps=10000):
         else:
             print('unknown read nibble', ins_r, 'at', instruction['PC'])
 
-        if sim_state['RAM'][0x00FF] != 0:
-            stack = sim_state['RAM'][sim_state['RAM'][0x00FF] + 1:]
-            s_stack = ' '.join(reversed([hex_w(s) for s in stack]))
-            s_overflow = ''
-            if sim_state['RAM'][0x00FF] < 0xfc00:
-                s_overflow = 'OVERFLOW '
-            s_empty = ''
-            if sim_state['RAM'][0x00FF] == 0xFFFF:
-                s_empty = '----'
-            debug_extras[3] = f'[STACK]  {s_overflow}{s_stack}{s_empty}'
+        if arg_debug:
+            if len(output) > 0:
+                s_output = []
+                for c in output:
+                    s_c = hex_w(c)
+                    if chr(c).isascii() and chr(c).isprintable():
+                        s_c += f' ({chr(c)})'
+                    s_output.append(s_c)
+                s_output = ' '.join(s_output)
+                debug_extras[1] = f'[GPOA_]  {s_output}'
 
-        heap_blocks = []
-        heap_address = 0x0040
-        while heap_address != 0:
-            heap_blocks.append({
-                'address': heap_address,
-                'previous': sim_state['RAM'][heap_address - 4],
-                'next': sim_state['RAM'][heap_address - 3],
-                'capacity': sim_state['RAM'][heap_address - 2],
-                'size': sim_state['RAM'][heap_address - 1],
-            })
-            heap_address = heap_blocks[-1]['next']
-        if heap_blocks[0]['capacity'] > 0:
-            s_blocks = ' '.join([f'{hex_w(s["address"])} ({s["size"]}/{s["capacity"]})' for s in heap_blocks])
-            debug_extras[4] = f'[HEAP_]  {s_blocks}'
+            if sim_state['RAM'][0x00FF] != 0:
+                stack = sim_state['RAM'][sim_state['RAM'][0x00FF] + 1:]
+                s_stack = ' '.join(reversed([hex_w(s) for s in stack]))
+                s_overflow = ''
+                if sim_state['RAM'][0x00FF] < 0xfc00:
+                    s_overflow = 'OVERFLOW '
+                s_empty = ''
+                if sim_state['RAM'][0x00FF] == 0xFFFF:
+                    s_empty = '----'
+                debug_extras[3] = f'[STACK]  {s_overflow}{s_stack}{s_empty}'
 
-        if debug:
+            heap_blocks = []
+            heap_address = 0x0040
+            while heap_address != 0:
+                heap_blocks.append({
+                    'address': heap_address,
+                    'previous': sim_state['RAM'][heap_address - 4],
+                    'next': sim_state['RAM'][heap_address - 3],
+                    'capacity': sim_state['RAM'][heap_address - 2],
+                    'size': sim_state['RAM'][heap_address - 1],
+                })
+                heap_address = heap_blocks[-1]['next']
+            if heap_blocks[0]['capacity'] > 0:
+                s_blocks = ' '.join([f'{hex_w(s["address"])} ({s["size"]}/{s["capacity"]})' for s in heap_blocks])
+                debug_extras[4] = f'[HEAP_]  {s_blocks}'
+
+            s_stat = f'{hex_w(sim_state["STAT"], 2)} {(sim_state["STAT"] >> 0) & 1} {(sim_state["STAT"] >> 1) & 1} {(sim_state["STAT"] >> 2) & 1}'
+
             # TODO: check if instruction in def or label before, show def name or label
             print(f'{s_spaces}{s_src}')
             print(f'{s_pc}   {s_ins}       {s_asm}')
             print()
-            print('[A___] [B___] [C___] [RAM_P] [RAM_] [STAT]')
-            print(f' {hex_w(sim_state["A"])}   {hex_w(sim_state["B"])}   {hex_w(sim_state["C"])}   {hex_w(sim_state["RAM_P"])}    {hex_w(sim_state["RAM"][sim_state["RAM_P"]])}    {hex_w(sim_state["STAT"], 2)}')
+            print('[A___] [B___] [C___] [RAM_P] [RAM_] [STAT C Z N]')
+            print(f' {hex_w(sim_state["A"])}   {hex_w(sim_state["B"])}   {hex_w(sim_state["C"])}    {hex_w(sim_state["RAM_P"])}   {hex_w(sim_state["RAM"][sim_state["RAM_P"]])}     {s_stat}')
             print('\n'.join(debug_extras))
 
         if '"end"  -> PC;' in instruction['src']:
             print('Program ended')
             break
-        
-        if debug:
+
+        if arg_debug and not arg_nostep:
             try:
                 input()
             except KeyboardInterrupt:
@@ -258,4 +284,4 @@ if arg_path is None:
     print('Please specify path to assembler output file (.txt)')
 else:
     program = parse_txt(arg_path)
-    sim(program, True)
+    sim(program)
