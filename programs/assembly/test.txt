@@ -1,29 +1,29 @@
 # "main":
-(0000) 05 00ff  #  defaults.ha  l. 132
-(0003) 04 ffff  #  defaults.ha  l. 133
-(0006) 01 0001  #  programs/assembly/malloc.ha  l. 13
-(0009) 0b 8000  #  programs/assembly/malloc.ha  l. 14
-(000c) 04 0000  #  programs/assembly/malloc.ha  l. 14
-(000f) ab       #  programs/assembly/malloc.ha  l. 15
-(0010) 04 0000  #  programs/assembly/malloc.ha  l. 15
-(0013) ab       #  programs/assembly/malloc.ha  l. 16
-(0014) 04 7bfc  #  programs/assembly/malloc.ha  l. 16
-(0017) ab       #  programs/assembly/malloc.ha  l. 17
-(0018) 04 0000  #  programs/assembly/malloc.ha  l. 17
+(0000) 05 00ff  #  programs/assembly/defaults.ha  l. 132
+(0003) 04 ffff  #  programs/assembly/defaults.ha  l. 133
+(0006) 01 0001  #  programs/assembly/malloc.ha  l. 15
+(0009) 0b 8000  #  programs/assembly/malloc.ha  l. 16
+(000c) 04 0000  #  programs/assembly/malloc.ha  l. 16
+(000f) ab       #  programs/assembly/malloc.ha  l. 17
+(0010) 04 0000  #  programs/assembly/malloc.ha  l. 17
+(0013) ab       #  programs/assembly/malloc.ha  l. 18
+(0014) 04 7bfc  #  programs/assembly/malloc.ha  l. 18
+(0017) ab       #  programs/assembly/malloc.ha  l. 19
+(0018) 04 0000  #  programs/assembly/malloc.ha  l. 19
 (001b) 01 0010  #  l. 8
-(001e) 05 0011  #  defaults.ha  l. 7
-(0021) 14       #  defaults.ha  l. 8
-(0022) 61       #  defaults.ha  l. 154
-(0023) 02 0013  #  defaults.ha  l. 155
-(0026) 05 00ff  #  defaults.ha  l. 136
-(0029) 45       #  defaults.ha  l. 137
-(002a) a4       #  defaults.ha  l. 156
-(002b) 05 00ff  #  defaults.ha  l. 139
-(002e) 42       #  defaults.ha  l. 64
-(002f) 01 ffff  #  defaults.ha  l. 65
-(0032) a4       #  defaults.ha  l. 66
+(001e) 05 0011  #  programs/assembly/defaults.ha  l. 7
+(0021) 14       #  programs/assembly/defaults.ha  l. 8
+(0022) 61       #  programs/assembly/defaults.ha  l. 154
+(0023) 02 0013  #  programs/assembly/defaults.ha  l. 155
+(0026) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(0029) 45       #  programs/assembly/defaults.ha  l. 137
+(002a) a4       #  programs/assembly/defaults.ha  l. 156
+(002b) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(002e) 42       #  programs/assembly/defaults.ha  l. 64
+(002f) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0032) a4       #  programs/assembly/defaults.ha  l. 66
 (0033) 06 0091  #  l. 10
-(0036) 05 0200  #  defaults.ha  l. 73
+(0036) 05 0200  #  programs/assembly/defaults.ha  l. 73
 (0039) 14       #  l. 11
 (003a) 05 1000  #  l. 12
 (003d) 14       #  l. 13
@@ -41,77 +41,77 @@
 (0057) 05 1000  #  l. 23
 (005a) 4b       #  l. 24
 (005b) 43       #  l. 24
-(005c) 05 0200  #  defaults.ha  l. 73
+(005c) 05 0200  #  programs/assembly/defaults.ha  l. 73
 (005f) 34       #  l. 24
 (0060) ab       #  l. 25
 (0061) 43       #  l. 25
-(0062) 05 0200  #  defaults.ha  l. 73
+(0062) 05 0200  #  programs/assembly/defaults.ha  l. 73
 (0065) 34       #  l. 25
 (0066) ab       #  l. 26
 (0067) 43       #  l. 26
-(0068) 05 0200  #  defaults.ha  l. 73
+(0068) 05 0200  #  programs/assembly/defaults.ha  l. 73
 (006b) 34       #  l. 26
 (006c) ab       #  l. 27
 (006d) 43       #  l. 27
-(006e) 05 0200  #  defaults.ha  l. 73
+(006e) 05 0200  #  programs/assembly/defaults.ha  l. 73
 (0071) 34       #  l. 27
 (0072) 05 1000  #  l. 29
 (0075) 41       #  l. 30
-(0076) 05 0011  #  defaults.ha  l. 7
-(0079) 14       #  defaults.ha  l. 8
-(007a) 61       #  defaults.ha  l. 154
-(007b) 02 0013  #  defaults.ha  l. 155
-(007e) 05 00ff  #  defaults.ha  l. 136
-(0081) 45       #  defaults.ha  l. 137
-(0082) a4       #  defaults.ha  l. 156
-(0083) 05 00ff  #  defaults.ha  l. 139
-(0086) 42       #  defaults.ha  l. 64
-(0087) 01 ffff  #  defaults.ha  l. 65
-(008a) a4       #  defaults.ha  l. 66
+(0076) 05 0011  #  programs/assembly/defaults.ha  l. 7
+(0079) 14       #  programs/assembly/defaults.ha  l. 8
+(007a) 61       #  programs/assembly/defaults.ha  l. 154
+(007b) 02 0013  #  programs/assembly/defaults.ha  l. 155
+(007e) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(0081) 45       #  programs/assembly/defaults.ha  l. 137
+(0082) a4       #  programs/assembly/defaults.ha  l. 156
+(0083) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0086) 42       #  programs/assembly/defaults.ha  l. 64
+(0087) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(008a) a4       #  programs/assembly/defaults.ha  l. 66
 (008b) 06 00d2  #  l. 32
 # "end":
 (008e) 06 008e  #  l. 35
 # "malloc":
-(0091) 05 0011  #  defaults.ha  l. 11
-(0094) 41       #  defaults.ha  l. 12
-(0095) 05 0040  #  programs/assembly/malloc.ha  l. 22
-(0098) 14       #  programs/assembly/malloc.ha  l. 23
-(0099) 05 0041  #  programs/assembly/malloc.ha  l. 25
-(009c) 04 8000  #  programs/assembly/malloc.ha  l. 26
+(0091) 05 0011  #  programs/assembly/defaults.ha  l. 11
+(0094) 41       #  programs/assembly/defaults.ha  l. 12
+(0095) 05 0040  #  programs/assembly/malloc.ha  l. 24
+(0098) 14       #  programs/assembly/malloc.ha  l. 25
+(0099) 05 0041  #  programs/assembly/malloc.ha  l. 27
+(009c) 04 8000  #  programs/assembly/malloc.ha  l. 28
 # "malloc_loop_find_block":
-(009f) 05 0041  #  programs/assembly/malloc.ha  l. 29
-(00a2) 41       #  programs/assembly/malloc.ha  l. 30
-(00a3) 0e 00ba  #  programs/assembly/malloc.ha  l. 31
-(00a6) 05 0041  #  programs/assembly/malloc.ha  l. 36
-(00a9) 41       #  programs/assembly/malloc.ha  l. 37
-(00aa) 02 0001  #  programs/assembly/malloc.ha  l. 38
-(00ad) a5       #  programs/assembly/malloc.ha  l. 39
-(00ae) 41       #  programs/assembly/malloc.ha  l. 40
-(00af) 05 0041  #  programs/assembly/malloc.ha  l. 41
-(00b2) 14       #  programs/assembly/malloc.ha  l. 42
-(00b3) 06 009f  #  programs/assembly/malloc.ha  l. 43
-(00b6) 05 0011  #  defaults.ha  l. 11
-(00b9) 41       #  defaults.ha  l. 12
+(009f) 05 0041  #  programs/assembly/malloc.ha  l. 31
+(00a2) 41       #  programs/assembly/malloc.ha  l. 32
+(00a3) 0e 00ba  #  programs/assembly/malloc.ha  l. 33
+(00a6) 05 0041  #  programs/assembly/malloc.ha  l. 38
+(00a9) 41       #  programs/assembly/malloc.ha  l. 39
+(00aa) 02 0001  #  programs/assembly/malloc.ha  l. 40
+(00ad) a5       #  programs/assembly/malloc.ha  l. 41
+(00ae) 41       #  programs/assembly/malloc.ha  l. 42
+(00af) 05 0041  #  programs/assembly/malloc.ha  l. 43
+(00b2) 14       #  programs/assembly/malloc.ha  l. 44
+(00b3) 06 009f  #  programs/assembly/malloc.ha  l. 45
+(00b6) 05 0011  #  programs/assembly/defaults.ha  l. 11
+(00b9) 41       #  programs/assembly/defaults.ha  l. 12
 # "malloc_return_null":
-(00ba) 01 0000  #  programs/assembly/malloc.ha  l. 48
+(00ba) 01 0000  #  programs/assembly/malloc.ha  l. 50
 (00bd) 05 0011  #  l. 1
 (00c0) 14       #  l. 1
-(00c1) 05 00ff  #  defaults.ha  l. 161
-(00c4) 42       #  defaults.ha  l. 59
-(00c5) 01 0001  #  defaults.ha  l. 60
-(00c8) a4       #  defaults.ha  l. 61
+(00c1) 05 00ff  #  programs/assembly/defaults.ha  l. 161
+(00c4) 42       #  programs/assembly/defaults.ha  l. 59
+(00c5) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(00c8) a4       #  programs/assembly/defaults.ha  l. 61
 (00c9) 05 0011  #  l. 1
 (00cc) 41       #  l. 1
-(00cd) 05 00ff  #  defaults.ha  l. 164
-(00d0) 45       #  defaults.ha  l. 165
-(00d1) 46       #  defaults.ha  l. 166
+(00cd) 05 00ff  #  programs/assembly/defaults.ha  l. 164
+(00d0) 45       #  programs/assembly/defaults.ha  l. 165
+(00d1) 46       #  programs/assembly/defaults.ha  l. 166
 # "mfree":
-(00d2) 05 0011  #  defaults.ha  l. 11
-(00d5) 41       #  defaults.ha  l. 12
-(00d6) 05 00ff  #  defaults.ha  l. 161
-(00d9) 42       #  defaults.ha  l. 59
-(00da) 01 0001  #  defaults.ha  l. 60
-(00dd) a4       #  defaults.ha  l. 61
-(00de) 05 00ff  #  defaults.ha  l. 164
-(00e1) 45       #  defaults.ha  l. 165
-(00e2) 46       #  defaults.ha  l. 166
+(00d2) 05 0011  #  programs/assembly/defaults.ha  l. 11
+(00d5) 41       #  programs/assembly/defaults.ha  l. 12
+(00d6) 05 00ff  #  programs/assembly/defaults.ha  l. 161
+(00d9) 42       #  programs/assembly/defaults.ha  l. 59
+(00da) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(00dd) a4       #  programs/assembly/defaults.ha  l. 61
+(00de) 05 00ff  #  programs/assembly/defaults.ha  l. 164
+(00e1) 45       #  programs/assembly/defaults.ha  l. 165
+(00e2) 46       #  programs/assembly/defaults.ha  l. 166

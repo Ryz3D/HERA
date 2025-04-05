@@ -3,29 +3,48 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: gcc.exe build active file",
+            "label": "build assembler",
             "command": "C:\\MinGW\\bin\\gcc.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-Wall",
                 "-g",
-                "${file}",
+                "assembler.c",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${workspaceFolder}\\assembler.exe"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}\\assembler"
             },
             "problemMatcher": [
                 "$gcc"
             ],
-            "group": "build",
-            "detail": "compiler: C:\\MinGW\\bin\\gcc.exe"
+            "group": "build"
+        },
+        {
+            "type": "cppbuild",
+            "label": "build compiler",
+            "command": "C:\\MinGW\\bin\\gcc.exe",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-Wall",
+                "-g",
+                "main.c",
+                "-o",
+                "${workspaceFolder}\\compiler.exe"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}\\compiler"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build"
         },
         {
             "label": "simulate test.ha",
             "type": "shell",
-            "command": "assembler programs/assembly/test.ha && python simulator.py -d programs/assembly/test.ha",
+            "command": "assembler programs/assembly/test.ha && python simulator/simulator.py -d programs/assembly/test.ha",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -40,7 +59,7 @@
         {
             "label": "simulate test.ha (fast)",
             "type": "shell",
-            "command": "assembler programs/assembly/test.ha && python simulator.py -d -ns programs/assembly/test.ha",
+            "command": "assembler programs/assembly/test.ha && python simulator/simulator.py -d -ns programs/assembly/test.ha",
             "options": {
                 "cwd": "${workspaceFolder}"
             },

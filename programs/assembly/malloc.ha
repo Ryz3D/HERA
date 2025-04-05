@@ -1,3 +1,5 @@
+inc programs/assembly/defaults.ha;
+
 # static ram 0x0300 - 0x7fff (size 0x7d00)
 # heap 0x8004 (header starts at 0x8000) - 0xfbff (size 0x7bfc)
 # stack 0xfc00 - 0xffff (size 0x0400)

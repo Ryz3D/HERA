@@ -1,4 +1,4 @@
-inc defaults.ha;
+inc programs/assembly/defaults.ha;
 inc programs/assembly/malloc.ha;
 
 "main":
