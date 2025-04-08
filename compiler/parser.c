@@ -18,9 +18,10 @@ typedef struct parser_state {
 
 // expect instruction (function/for) or expect expression (assignment/argument)
 
+// returns false on error
 bool cmp_parser_run(FILE *f, ast_element_t **ast) {
     token_t *tokens = NULL;
-    uint32_t tokens_count;
+    uint32_t tokens_count = 0;
 
     if (!cmp_tokenizer_run(f, &tokens, &tokens_count)) {
         return false;
@@ -31,11 +32,11 @@ bool cmp_parser_run(FILE *f, ast_element_t **ast) {
     }
 
     for (uint32_t i = 0; i < tokens_count; i++)
-        printf("token %u: %i" ENDL, i, tokens[i].type);
+        printf("token %u: %i\t(%s)" ENDL, i, tokens[i].type, token_str[tokens[i].type]);
 
     // TODO: run preprocessor over tokens
 
     ast = malloc(1);
 
-    return;
+    return true;
 }
