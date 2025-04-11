@@ -31,12 +31,23 @@ bool cmp_parser_run(FILE *f, ast_element_t **ast) {
         return false;
     }
 
-    for (uint32_t i = 0; i < tokens_count; i++)
-        printf("token %u: %i\t(%s)" ENDL, i, tokens[i].type, token_str[tokens[i].type]);
+    for (uint32_t i = 0; i < tokens_count; i++) {
+        if (tokens[i].type < TOKEN_STR_COUNT) {
+            printf("token %u: %i\t%s" ENDL, i, tokens[i].type, token_str[tokens[i].type]);
+        } else {
+            printf("token %u: %i\t%s" ENDL, i, tokens[i].type, tokens[i].str);
+        }
+    }
 
     // TODO: run preprocessor over tokens
 
     ast = malloc(1);
+
+    for (uint32_t i = 0; i < tokens_count; i++) {
+        if (tokens[i].allocated) {
+            free(tokens[i].str);
+        }
+    }
 
     return true;
 }

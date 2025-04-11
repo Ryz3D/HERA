@@ -19,12 +19,12 @@ int main(int argc, char *argv[]) {
     }
 
     ast_element_t *ast = NULL;
-    cmp_parser_run(f, &ast);
+    bool success = cmp_parser_run(f, &ast);
     fclose(f);
     if (ast == NULL) {
         return 1;
     }
     printf("ast %i" ENDL, ast->type);
 
-    return 0;
+    return success ? 0 : 1;
 }
