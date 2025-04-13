@@ -6,9 +6,16 @@
 const char *cmp_debug_src = "./programs/c/test.c";
 
 int main(int argc, char *argv[]) {
-    const char *path_src = argv[1];
+    const char *path_src = NULL;
 #if DEBUG
     path_src = cmp_debug_src;
+#else
+    if (argc > 1) {
+        path_src = argv[1];
+    } else {
+        printf("ERROR: specify source file as argument" ENDL);
+        return 1;
+    }
 #endif
 
     printf("parsing \"%s\"..." ENDL, path_src);

@@ -1,0 +1,44 @@
+# "main":
+(0000) 05 0021  #  l. 4
+(0003) 04 001f  #  l. 4
+(0006) 05 0020  #  l. 5
+(0009) 04 ffff  #  l. 5
+(000c) 05 0023  #  l. 7
+(000f) 04 002f  #  l. 7
+(0012) 05 0022  #  l. 8
+(0015) 04 ffff  #  l. 8
+(0018) 05 0020  #  l. 10
+(001b) 41       #  l. 10
+(001c) 05 0022  #  l. 11
+(001f) 42       #  l. 11
+(0020) 05 0025  #  l. 12
+(0023) a4       #  l. 13
+(0024) 71       #  l. 14
+(0025) 02 0001  #  l. 15
+(0028) 05 0012  #  programs/assembly/defaults.ha  l. 15
+(002b) 24       #  programs/assembly/defaults.ha  l. 16
+(002c) 12       #  programs/assembly/defaults.ha  l. 109
+(002d) c3       #  programs/assembly/defaults.ha  l. 110
+(002e) 05 0012  #  programs/assembly/defaults.ha  l. 19
+(0031) 42       #  programs/assembly/defaults.ha  l. 20
+(0032) 21       #  programs/assembly/defaults.ha  l. 112
+(0033) c2       #  programs/assembly/defaults.ha  l. 113
+(0034) 31       #  programs/assembly/defaults.ha  l. 114
+(0035) c1       #  programs/assembly/defaults.ha  l. 115
+(0036) 05 0021  #  l. 17
+(0039) 42       #  l. 17
+(003a) a1       #  l. 18
+(003b) 05 0023  #  l. 19
+(003e) 42       #  l. 19
+(003f) 05 0026  #  l. 20
+(0042) a4       #  l. 21
+(0043) 05 0026  #  l. 23
+(0046) 41       #  l. 24
+(0047) 05 0200  #  programs/assembly/defaults.ha  l. 73
+(004a) 14       #  l. 25
+(004b) 05 0025  #  l. 26
+(004e) 41       #  l. 27
+(004f) 05 0200  #  programs/assembly/defaults.ha  l. 73
+(0052) 14       #  l. 28
+# "end":
+(0053) 06 0053  #  l. 31
