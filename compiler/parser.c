@@ -20,34 +20,38 @@ typedef struct parser_state {
 
 // returns false on error
 bool cmp_parser_run(FILE *f, ast_element_t **ast) {
-    token_t *tokens = NULL;
-    uint32_t tokens_count = 0;
+    token_t *tokens1 = NULL;
+    uint32_t tokens1_count = 0;
 
-    if (!cmp_tokenizer_run(f, &tokens, &tokens_count)) {
+    if (!cmp_tokenizer_run(f, &tokens1, &tokens1_count)) {
         return false;
     }
-    if (tokens == NULL) {
+    if (tokens1 == NULL) {
         printf("empty file?" ENDL);
         return false;
     }
 
-    for (uint32_t i = 0; i < tokens_count; i++) {
-        if (tokens[i].type < TOKEN_STR_COUNT) {
-            printf("token %u: %i\t%s" ENDL, i, tokens[i].type, token_str[tokens[i].type]);
+    token_t *tokens2 = NULL;
+    uint32_t tokens2_count = 0;
+    if (!cmp_preprocessor_run(tokens1, tokens1_count, &tokens2, &tokens2_count)) {
+        cmp_tokenizer_free(tokens1, tokens1_count);
+        return false;
+    }
+
+    for (uint32_t i = 0; i < tokens2_count; i++) {
+        if (tokens2[i].type < TOKEN_STR_COUNT) {
+            printf("token %u: %i\t%s" ENDL, i, tokens2[i].type, token_str[tokens2[i].type]);
         } else {
-            printf("token %u: %i\t%s" ENDL, i, tokens[i].type, tokens[i].str);
+            printf("token %u: %i\t%s" ENDL, i, tokens2[i].type, tokens2[i].str);
         }
     }
 
-    // TODO: run preprocessor over tokens
+    // TODO: add all variables to list (maybe prefix: filename_function_variable), before adding: check if name already exists and append something to differenciate
 
     ast = malloc(1);
+    free(ast);
 
-    for (uint32_t i = 0; i < tokens_count; i++) {
-        if (tokens[i].allocated) {
-            free(tokens[i].str);
-        }
-    }
+    cmp_tokenizer_free(tokens2, tokens2_count);
 
     return true;
 }

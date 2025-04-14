@@ -53,7 +53,10 @@ typedef enum token_type {
     TOKEN_STRING,               // "test"
     TOKEN_ANGLE_STRING,         // <test>
     TOKEN_CHAR,                 // 'c'
-    TOKEN_INT,                  // 0
+    TOKEN_INT_DEC,              // 1
+    TOKEN_INT_OCT,              // 01
+    TOKEN_INT_BIN,              // 0b1
+    TOKEN_INT_HEX,              // 0x1
     TOKEN_FLOAT,                // 0.0
     TOKEN_EOF,
     TOKEN_UNKNOWN,
@@ -277,7 +280,6 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
         fsetpos(state->f_src, &start);
 
         if (f_buffer[0] == '\'') {
-            // TODO: char
             char *str = malloc(2 * sizeof(char));
             if (str == NULL) {
                 printf("ERROR: out of memory" ENDL);
@@ -317,7 +319,7 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                         str[0] = ' ';
                         break;
                     case 'v':
-                    str[0] = '\v';
+                        str[0] = '\v';
                         break;
                     case 'x':
                         // TODO: hex
@@ -534,23 +536,101 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                 .str = str,
                 .allocated = true,
             });
-        } else if ((f_buffer[0] >= '0' && f_buffer[0] <= '9') || f_buffer[0] == '.') {
-            // TODO: decimal/octal
+        } else if (f_buffer[0] == '0' && (f_buffer[1] == 'b' || f_buffer[1] == 'B')) {
+            uint32_t str_length = 0, str_capacity = 1;
+            char *str = malloc(str_capacity * sizeof(char));
+            if (str == NULL) {
+                printf("ERROR: out of memory" ENDL);
+                return false;
+            }
+            cmp_tokenizer_read_char(state);
+            cmp_tokenizer_read_char(state);
             do {
                 fgetpos(state->f_src, &start);
-                f_buffer[0] = cmp_tokenizer_read_char(state);
-            } while (f_buffer[0] >= '0' && f_buffer[0] <= '9');
+                str[str_length++] = cmp_tokenizer_read_char(state);
+                if (str[str_length - 1] == '\'') {
+                    str_length--;
+                }
+                if (str_length >= str_capacity) {
+                    str_capacity *= 2;
+                    str = realloc(str, str_capacity * sizeof(char));
+                    if (str == NULL) {
+                        printf("ERROR: out of memory" ENDL);
+                        return false;
+                    }
+                }
+            } while ((str[str_length - 1] >= '0' && str[str_length - 1] <= '1') && !state->ended);
+            str[str_length - 1] = '\0';
             fsetpos(state->f_src, &start);
             return cmp_tokenizer_push_token(state, (token_t){
-                .type = TOKEN_INT,
-                .str = "0",
+                .type = TOKEN_INT_BIN,
+                .str = str,
+                .allocated = true,
             });
-        } else if (f_buffer[0] == '0' && (f_buffer[1] == 'b' || f_buffer[1] == 'B')) {
-            // TODO: binary
-            return true;
         } else if (f_buffer[0] == '0' && (f_buffer[1] == 'x' || f_buffer[1] == 'X')) {
-            // TODO: hex
-            return true;
+            uint32_t str_length = 0, str_capacity = 1;
+            char *str = malloc(str_capacity * sizeof(char));
+            if (str == NULL) {
+                printf("ERROR: out of memory" ENDL);
+                return false;
+            }
+            cmp_tokenizer_read_char(state);
+            cmp_tokenizer_read_char(state);
+            do {
+                fgetpos(state->f_src, &start);
+                str[str_length++] = cmp_tokenizer_read_char(state);
+                if (str[str_length - 1] == '\'') {
+                    str_length--;
+                }
+                if (str_length >= str_capacity) {
+                    str_capacity *= 2;
+                    str = realloc(str, str_capacity * sizeof(char));
+                    if (str == NULL) {
+                        printf("ERROR: out of memory" ENDL);
+                        return false;
+                    }
+                }
+            } while (((str[str_length - 1] >= '0' && str[str_length - 1] <= '9') ||
+                      (str[str_length - 1] >= 'a' && str[str_length - 1] <= 'f') ||
+                      (str[str_length - 1] >= 'A' && str[str_length - 1] <= 'F')) &&
+                       !state->ended);
+            str[str_length - 1] = '\0';
+            fsetpos(state->f_src, &start);
+            return cmp_tokenizer_push_token(state, (token_t){
+                .type = TOKEN_INT_HEX,
+                .str = str,
+                .allocated = true,
+            });
+        } else if (f_buffer[0] >= '0' && f_buffer[0] <= '9') {
+            uint32_t str_length = 0, str_capacity = 1;
+            char *str = malloc(str_capacity * sizeof(char));
+            if (str == NULL) {
+                printf("ERROR: out of memory" ENDL);
+                return false;
+            }
+            do {
+                fgetpos(state->f_src, &start);
+                str[str_length++] = cmp_tokenizer_read_char(state);
+                if (str[str_length - 1] == '\'') {
+                    str_length--;
+                }
+                if (str_length >= str_capacity) {
+                    str_capacity *= 2;
+                    str = realloc(str, str_capacity * sizeof(char));
+                    if (str == NULL) {
+                        printf("ERROR: out of memory" ENDL);
+                        return false;
+                    }
+                }
+            } while ((str[str_length - 1] >= '0' && str[str_length - 1] <= '9') &&
+                      !state->ended);
+            str[str_length - 1] = '\0';
+            fsetpos(state->f_src, &start);
+            return cmp_tokenizer_push_token(state, (token_t){
+                .type = str[0] == '0' ? TOKEN_INT_OCT : TOKEN_INT_DEC,
+                .str = str,
+                .allocated = true,
+            });
         } else if (f_buffer[0] == '/' && f_buffer[1] == '/') {
             char c;
             do {
@@ -625,4 +705,13 @@ bool cmp_tokenizer_run(FILE *f_src, token_t **tokens, uint32_t *tokens_count) {
         }
     }
     return true;
+}
+
+void cmp_tokenizer_free(token_t *tokens, uint32_t tokens_count) {
+    for (uint32_t i = 0; i < tokens_count; i++) {
+        if (tokens[i].allocated) {
+            free(tokens[i].str);
+        }
+    }
+    free(tokens);
 }

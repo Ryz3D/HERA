@@ -1,5 +1,6 @@
 #include "includes.h"
 #include "tokenizer.c"
+#include "preprocessor.c"
 #include "parser.c"
 #include "intermediate.c"
 
