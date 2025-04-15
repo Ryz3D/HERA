@@ -19,11 +19,13 @@ typedef struct parser_state {
 // expect instruction (function/for) or expect expression (assignment/argument)
 
 // returns false on error
-bool cmp_parser_run(FILE *f, ast_element_t **ast) {
+bool cmp_parser_run(const char *f_path, ast_element_t **ast) {
+    *ast = NULL;
+
     token_t *tokens1 = NULL;
     uint32_t tokens1_count = 0;
 
-    if (!cmp_tokenizer_run(f, &tokens1, &tokens1_count)) {
+    if (!cmp_tokenizer_run(f_path, &tokens1, &tokens1_count)) {
         return false;
     }
     if (tokens1 == NULL) {
@@ -37,6 +39,7 @@ bool cmp_parser_run(FILE *f, ast_element_t **ast) {
         cmp_tokenizer_free(tokens1, tokens1_count);
         return false;
     }
+    cmp_tokenizer_free(tokens1, tokens1_count);
 
     for (uint32_t i = 0; i < tokens2_count; i++) {
         if (tokens2[i].type < TOKEN_STR_COUNT) {
@@ -45,8 +48,6 @@ bool cmp_parser_run(FILE *f, ast_element_t **ast) {
             printf("token %u: %i\t%s" ENDL, i, tokens2[i].type, tokens2[i].str);
         }
     }
-
-    // TODO: add all variables to list (maybe prefix: filename_function_variable), before adding: check if name already exists and append something to differenciate
 
     ast = malloc(1);
     free(ast);

@@ -693,9 +693,23 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
     return true;
 }
 
-bool cmp_tokenizer_run(FILE *f_src, token_t **tokens, uint32_t *tokens_count) {
+bool cmp_tokenizer_run(const char *f_path, token_t **tokens, uint32_t *tokens_count) {
+    *tokens = NULL;
+    *tokens_count = 0;
+
+    if (f_path == NULL) {
+        printf("source file path null" ENDL);
+        return false;
+    }
+
+	FILE *f = fopen(f_path, "r");
+	if (f == NULL) {
+        printf("could not open source file \"%s\"" ENDL, f_path);
+        return false;
+	}
+
     tokenizer_state_t state = {
-        .f_src = f_src,
+        .f_src = f,
         .tokens = tokens,
         .tokens_count = tokens_count,
     };
@@ -704,6 +718,8 @@ bool cmp_tokenizer_run(FILE *f_src, token_t **tokens, uint32_t *tokens_count) {
             return false;
         }
     }
+
+    fclose(f);
     return true;
 }
 

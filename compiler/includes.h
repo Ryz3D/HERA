@@ -6,5 +6,5 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DEBUG 0
+#define DEBUG 1
 #define ENDL "\r\n"
