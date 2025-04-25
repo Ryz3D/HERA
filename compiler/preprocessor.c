@@ -1,3 +1,8 @@
+#ifndef INC_PREPROCESSOR_C
+#define INC_PREPROCESSOR_C
+
+#pragma once
+
 #include "includes.h"
 
 // returns false on error
@@ -16,7 +21,11 @@ bool cmp_preprocessor_run(token_t *tokens, uint32_t tokens_count, token_t **toke
         }
     }
 
-    // TODO
+    // TODO:
+    //  - resolve defines by tokens (replacing parameter tokens)
+    //  - concatenate string literals
 
     return true;
 }
+
+#endif

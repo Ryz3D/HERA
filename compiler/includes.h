@@ -8,3 +8,9 @@
 
 #define DEBUG 1
 #define ENDL "\r\n"
+
+#include "tokenizer.c"
+#include "preprocessor.c"
+#include "parser.c"
+#include "intermediate.c"
+#include "asm.c"

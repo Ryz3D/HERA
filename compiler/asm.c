@@ -1,3 +1,6 @@
+#ifndef INC_ASM_C
+#define INC_ASM_C
+
 #include "includes.h"
 
 typedef uint16_t asm_int_t;
@@ -62,3 +65,5 @@ bool cmp_asm_generate(inter_ins_t *inter_ins, uint32_t inter_ins_count, asm_inst
 bool cmp_asm_assemble(asm_instruction_t *asm_ins, uint32_t asm_ins_count, uint8_t **bin_data, uint32_t *bin_data_size) {
     return true;
 }
+
+#endif

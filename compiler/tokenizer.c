@@ -1,3 +1,6 @@
+#ifndef INC_TOKENIZER_C
+#define INC_TOKENIZER_C
+
 #include "includes.h"
 
 typedef enum token_type {
@@ -260,10 +263,7 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
         bool skip_linebreaks = true;
         if ((*state->tokens_count) > 0) {
             token_type_t t = (*state->tokens)[(*state->tokens_count) - 1].type;
-            skip_linebreaks =
-                t != TOKEN_BACKSLASH &&
-                t != TOKEN_KEYWORD &&
-                t != TOKEN_DIRECTIVE;
+            skip_linebreaks = t != TOKEN_DIRECTIVE;
         }
 
         char f_buffer[TOKEN_STR_MAX_LEN];
@@ -704,7 +704,7 @@ bool cmp_tokenizer_run(const char *f_path, token_t **tokens, uint32_t *tokens_co
 
 	FILE *f = fopen(f_path, "r");
 	if (f == NULL) {
-        printf("could not open source file \"%s\"" ENDL, f_path);
+        printf("ERROR: could not open source file \"%s\"" ENDL, f_path);
         return false;
 	}
 
@@ -720,6 +720,29 @@ bool cmp_tokenizer_run(const char *f_path, token_t **tokens, uint32_t *tokens_co
     }
 
     fclose(f);
+
+    uint32_t deleted_tokens = 0;
+    for (uint32_t i = 0; i < *tokens_count; i++) {
+        if (i < (*tokens_count) - 1) {
+            if ((*tokens)[i].type == TOKEN_DIRECTIVE && (*tokens)[i + 1].type == TOKEN_ENDL) {
+                printf("ERROR: line break after #directive" ENDL);
+                return false;
+            }
+        }
+        if ((*tokens)[i].type == TOKEN_BACKSLASH || (*tokens)[i].type == TOKEN_ENDL) {
+            memcpy(&(*tokens)[i], &(*tokens)[i + 1], ((*tokens_count) - i) * sizeof(token_t));
+            (*tokens_count)--;
+            deleted_tokens++;
+        }
+    }
+    if (deleted_tokens > 0) {
+        *tokens = realloc(*tokens, (*tokens_count) * sizeof(token_t));
+        if (*tokens == NULL) {
+            printf("ERROR: tokenizer out of memory" ENDL);
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -731,3 +754,5 @@ void cmp_tokenizer_free(token_t *tokens, uint32_t tokens_count) {
     }
     free(tokens);
 }
+
+#endif

@@ -20,7 +20,7 @@ int main() {
     // 3. subtract 1 from previous value    0x65EA
     // 4. multiply by two                   0xCBD4
     // 5. xor with 4                        0xCBD0
-    //                                      52176
+    //                                       52176
     //                                      -13360
     delay(x);
     printf("%hi\r\n", x);

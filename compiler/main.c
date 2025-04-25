@@ -1,9 +1,4 @@
 #include "includes.h"
-#include "tokenizer.c"
-#include "preprocessor.c"
-#include "parser.c"
-#include "intermediate.c"
-#include "asm.c"
 
 const char *cmp_debug_src = "./programs/c/test.c";
 
