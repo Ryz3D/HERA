@@ -4,7 +4,8 @@
 #include "includes.h"
 
 typedef enum ast_type {
-    // purely structural (no "str" content)
+    // purely structural (no "token.str" content)
+    AST_ROOT,                 // children: {AST_FUNCTION_DECL|AST_VARIABLE_DECL|AST_TYPEDEF}[]
     AST_EXPRESSION,           // now this is tricky (arrays, structs, struct initializers, casts, dereferencing, in/decrementing)
     AST_INSTRUCTION,          // children: (AST_BODY|AST_FUNCTION_CALL|AST_VARIABLE_DECL|AST_ASSIGNMENT|AST_EXPRESSION|AST_IF|AST_WHILE|AST_DO_WHILE|AST_FOR|AST_SWITCH)
     AST_BODY,                 // children: (AST_INSTRUCTION[])
@@ -57,6 +58,16 @@ void cmp_parser_init_ast_element(ast_element_t *ast) {
     ast->children_count = 0;
 }
 
+ast_element_t *cmp_parser_add_ast_element(ast_element_t *ast) {
+    ast->children_count++;
+    ast->children = realloc(ast->children, ast->children_count * sizeof(ast_element_t));
+    if (ast->children == NULL) {
+        printf(ERROR "out of memory");
+        return NULL;
+    }
+    return &ast->children[ast->children_count - 1];
+}
+
 // returns false if not an expression
 bool cmp_parser_parse_expression(ast_element_t **ast) {
     return true;
@@ -85,8 +96,9 @@ bool cmp_parser_parse_declaration(ast_element_t **ast) {
 }
 
 // returns false on error
-bool cmp_parser_run(const char *f_path, ast_element_t **ast) {
-    *ast = NULL;
+bool cmp_parser_run(const char *f_path, ast_element_t *ast) {
+    cmp_parser_init_ast_element(ast);
+    ast->type = AST_ROOT;
 
     token_t *tokens1 = NULL;
     uint32_t tokens1_count = 0;
@@ -114,9 +126,6 @@ bool cmp_parser_run(const char *f_path, ast_element_t **ast) {
             printf("token %u: %i\t%s" ENDL, i, tokens2[i].type, tokens2[i].str);
         }
     }
-
-    ast = malloc(1);
-    free(ast);
 
     // TODO: parse tokens using cmp_parser_parse_declaration
     // TODO: cmp_parser_free(ast);

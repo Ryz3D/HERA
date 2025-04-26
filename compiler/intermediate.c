@@ -31,12 +31,12 @@ bool cmp_inter_generate_context_from_ast(ast_element_t *ast, inter_context_t *co
 bool cmp_inter_generate_context_from_file(const char *f_path, inter_context_t *context) {
     // TODO: path transformer for relative (to file or to cwd?) and absolute paths and search in include paths
     // TODO: look in cache if file re-included
-    ast_element_t *ast;
+    ast_element_t ast;
     bool success = cmp_parser_run(f_path, &ast);
-    if (ast == NULL || !success) {
+    if (!success) {
         return false;
     }
-    cmp_inter_generate_context_from_ast(ast, context);
+    cmp_inter_generate_context_from_ast(&ast, context);
     return true;
 }
 

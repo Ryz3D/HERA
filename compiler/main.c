@@ -1,16 +1,14 @@
 #include "includes.h"
 
-const char *cmp_debug_src = "./programs/c/test.c";
-
 int main(int argc, char *argv[]) {
     const char *path_src = NULL;
 #if DEBUG
-    path_src = cmp_debug_src;
+    path_src = DEBUG_SRC;
 #else
     if (argc > 1) {
         path_src = argv[1];
     } else {
-        printf("ERROR: specify source file as argument" ENDL);
+        printf(ERROR "specify source file as argument" ENDL);
         return 1;
     }
 #endif
@@ -35,7 +33,7 @@ int main(int argc, char *argv[]) {
 
     FILE *f_bin = fopen("compiled.bin", "w");
     if (f_bin == NULL) {
-        printf("ERROR: failed to open binary output file" ENDL);
+        printf(ERROR "failed to open binary output file" ENDL);
         return 1;
     }
     fwrite(bin_data, 1, bin_data_size, f_bin);

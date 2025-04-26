@@ -63,6 +63,12 @@ bool cmp_asm_generate(inter_ins_t *inter_ins, uint32_t inter_ins_count, asm_inst
 }
 
 bool cmp_asm_assemble(asm_instruction_t *asm_ins, uint32_t asm_ins_count, uint8_t **bin_data, uint32_t *bin_data_size) {
+    *bin_data = NULL;
+
+    if (*bin_data == NULL) {
+        return false;
+    }
+
     return true;
 }
 

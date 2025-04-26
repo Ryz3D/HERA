@@ -44,12 +44,12 @@ typedef enum token_type {
     TOKEN_ASSIGN,               // =
     TOKEN_LESS,                 // <
     TOKEN_GREATER,              // >
-    TOKEN_BRACE_R_L,            // (
-    TOKEN_BRACE_R_R,            // )
-    TOKEN_BRACE_S_L,            // [
-    TOKEN_BRACE_S_R,            // ]
-    TOKEN_BRACE_C_L,            // {
-    TOKEN_BRACE_C_R,            // }
+    TOKEN_BRACKET_R_L,          // (
+    TOKEN_BRACKET_R_R,          // )
+    TOKEN_BRACKET_S_L,          // [
+    TOKEN_BRACKET_S_R,          // ]
+    TOKEN_BRACKET_C_L,          // {
+    TOKEN_BRACKET_C_R,          // }
     TOKEN_ENDL,                 // \n
     TOKEN_KEYWORD,              // anything
     TOKEN_DIRECTIVE,            // #include
@@ -205,23 +205,44 @@ const char *token_str[] = {
     "\n",
 };
 
+typedef struct tokenizer_pos {
+    fpos_t f;
+    uint32_t i;
+} tokenizer_pos_t;
+
 typedef struct token {
     token_type_t type;
     bool allocated;
     char *str;
+    const char *f_path;
+    uint32_t line, col;
 } token_t;
 
 typedef struct tokenizer_state {
+    const char *f_path;
     FILE *f_src;
     token_t **tokens;
     uint32_t *tokens_count;
     bool ended;
+    tokenizer_pos_t pos;
+    tokenizer_pos_t last_linebreak_pos;
+    uint32_t current_line;
 } tokenizer_state_t;
+
+#define TOKEN_POS_FORMAT "\e[1;36m%s:%u:%u:\e[m "
+#define TOKEN_POS_FORMAT_VALUES(t) (t).f_path, (t).line, (t).col
+
+void cmp_tokenizer_set_pos(tokenizer_state_t *state, tokenizer_pos_t pos) {
+    fsetpos(state->f_src, &pos.f);
+    state->pos = pos;
+}
 
 char cmp_tokenizer_read_char(tokenizer_state_t *state) {
     char c = '\0';
     if (!state->ended) {
         state->ended = fread(&c, sizeof(char), 1, state->f_src) == 0;
+        fgetpos(state->f_src, &state->pos.f);
+        state->pos.i++;
     }
     return c;
 }
@@ -229,13 +250,12 @@ char cmp_tokenizer_read_char(tokenizer_state_t *state) {
 // returns true if character(s) skipped
 bool cmp_tokenizer_skip_whitespace(tokenizer_state_t *state) {
     bool skipped = false;
-    fpos_t pos;
 
     while (!state->ended) {
-        fgetpos(state->f_src, &pos);
+        tokenizer_pos_t pos = state->pos;
         char c = cmp_tokenizer_read_char(state);
         if (c != ' ' && c != '\t' && c != '\r') {
-            fsetpos(state->f_src, &pos);
+            cmp_tokenizer_set_pos(state, pos);
             break;
         }
         skipped = true;
@@ -252,6 +272,9 @@ bool cmp_tokenizer_push_token(tokenizer_state_t *state, token_t token) {
         return false;
     }
     (*state->tokens)[(*state->tokens_count) - 1] = token;
+    (*state->tokens)[(*state->tokens_count) - 1].f_path = state->f_path;
+    (*state->tokens)[(*state->tokens_count) - 1].line = state->current_line;
+    (*state->tokens)[(*state->tokens_count) - 1].col = state->pos.i - state->last_linebreak_pos.i;
     return true;
 }
 
@@ -268,21 +291,25 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
 
         char f_buffer[TOKEN_STR_MAX_LEN];
         memset(f_buffer, 0, sizeof(f_buffer));
-        fpos_t start;
+        tokenizer_pos_t start;
         do {
-            fgetpos(state->f_src, &start);
+            if (f_buffer[0] == '\n') {
+                state->last_linebreak_pos = state->pos;
+                state->current_line++;
+            }
+            start = state->pos;
             f_buffer[0] = cmp_tokenizer_read_char(state);
         } while ((f_buffer[0] == '\r' || (f_buffer[0] == '\n' && skip_linebreaks)) && !state->ended);
-        fsetpos(state->f_src, &start);
+        cmp_tokenizer_set_pos(state, start);
         for (uint32_t i = 0; i < TOKEN_STR_MAX_LEN && !state->ended; i++) {
             f_buffer[i] = cmp_tokenizer_read_char(state);
         }
-        fsetpos(state->f_src, &start);
+        cmp_tokenizer_set_pos(state, start);
 
         if (f_buffer[0] == '\'') {
             char *str = malloc(2 * sizeof(char));
             if (str == NULL) {
-                printf("ERROR: out of memory" ENDL);
+                printf(ERROR "out of memory" ENDL);
                 return false;
             }
             cmp_tokenizer_read_char(state);
@@ -338,14 +365,14 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                         str[0] = '\'';
                         break;
                     default:
-                        printf("ERROR: unknown escape sequence \"\\%c\"" ENDL, str[0]);
+                        printf(ERROR "unknown escape sequence \"\\%c\"" ENDL, str[0]);
                         return false;
                 }
             }
             char c = cmp_tokenizer_read_char(state);
             if (c != '\'') {
                 free(str);
-                printf("ERROR: missing closing '" ENDL);
+                printf(ERROR "missing closing '" ENDL);
                 return false;
             }
             str[1] = '\0';
@@ -358,7 +385,7 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
             uint32_t str_length = 0, str_capacity = 1;
             char *str = malloc(str_capacity * sizeof(char));
             if (str == NULL) {
-                printf("ERROR: out of memory" ENDL);
+                printf(ERROR "out of memory" ENDL);
                 return false;
             }
             cmp_tokenizer_read_char(state);
@@ -371,6 +398,8 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                     }
                     switch (c) {
                         case '\n':
+                            state->last_linebreak_pos = state->pos;
+                            state->current_line++;
                             break; // line continuation
                         case '0':
                             c = '\0'; // TODO: other values
@@ -420,23 +449,26 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                             c = '\'';
                             break;
                         default:
-                            printf("ERROR: unknown escape sequence \"\\%c\"" ENDL, c);
+                            printf(ERROR "unknown escape sequence \"\\%c\"" ENDL, c);
                             return false;
                     }
+                } else if (c == '\n') {
+                    state->last_linebreak_pos = state->pos;
+                    state->current_line++;
                 }
                 str[str_length++] = c;
                 if (str_length >= str_capacity) {
                     str_capacity *= 2;
                     str = realloc(str, str_capacity * sizeof(char));
                     if (str == NULL) {
-                        printf("ERROR: out of memory" ENDL);
+                        printf(ERROR "out of memory" ENDL);
                         return false;
                     }
                 }
             } while (str[str_length - 1] != '"' && !state->ended);
             if (str[str_length - 1] != '"') {
                 free(str);
-                printf("ERROR: missing closing \"" ENDL);
+                printf(ERROR "missing closing \"" ENDL);
                 return false;
             }
             str[str_length - 1] = '\0';
@@ -449,7 +481,7 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
             uint32_t str_length = 0, str_capacity = 1;
             char *str = malloc(str_capacity * sizeof(char));
             if (str == NULL) {
-                printf("ERROR: out of memory" ENDL);
+                printf(ERROR "out of memory" ENDL);
                 return false;
             }
             cmp_tokenizer_read_char(state);
@@ -459,14 +491,23 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                     str_capacity *= 2;
                     str = realloc(str, str_capacity * sizeof(char));
                     if (str == NULL) {
-                        printf("ERROR: out of memory" ENDL);
+                        printf(ERROR "out of memory" ENDL);
+                        return false;
+                    }
+                }
+                if (str[str_length - 1] == '\n') {
+                    if (str[str_length - 2] == '\\') {
+                        str_length -= 2;
+                    } else {
+                        free(str);
+                        printf(ERROR "missing closing > before newline" ENDL);
                         return false;
                     }
                 }
             } while (str[str_length - 1] != '>' && !state->ended);
             if (str[str_length - 1] != '>') {
                 free(str);
-                printf("ERROR: missing closing >" ENDL);
+                printf(ERROR "missing closing >" ENDL);
                 return false;
             }
             str[str_length - 1] = '\0';
@@ -479,18 +520,18 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
             uint32_t str_length = 0, str_capacity = 1;
             char *str = malloc(str_capacity * sizeof(char));
             if (str == NULL) {
-                printf("ERROR: out of memory" ENDL);
+                printf(ERROR "out of memory" ENDL);
                 return false;
             }
             cmp_tokenizer_read_char(state);
             do {
-                fgetpos(state->f_src, &start);
+                start = state->pos;
                 str[str_length++] = cmp_tokenizer_read_char(state);
                 if (str_length >= str_capacity) {
                     str_capacity *= 2;
                     str = realloc(str, str_capacity * sizeof(char));
                     if (str == NULL) {
-                        printf("ERROR: out of memory" ENDL);
+                        printf(ERROR "out of memory" ENDL);
                         return false;
                     }
                 }
@@ -499,7 +540,7 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                       (str[str_length - 1] >= '0' && str[str_length - 1] <= '9') ||
                        str[str_length - 1] == '_') && !state->ended);
             str[str_length - 1] = '\0';
-            fsetpos(state->f_src, &start);
+            cmp_tokenizer_set_pos(state, start);
             return cmp_tokenizer_push_token(state, (token_t){
                 .type = TOKEN_DIRECTIVE,
                 .str = str,
@@ -511,17 +552,17 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
             uint32_t str_length = 0, str_capacity = 1;
             char *str = malloc(str_capacity * sizeof(char));
             if (str == NULL) {
-                printf("ERROR: out of memory" ENDL);
+                printf(ERROR "out of memory" ENDL);
                 return false;
             }
             do {
-                fgetpos(state->f_src, &start);
+                start = state->pos;
                 str[str_length++] = cmp_tokenizer_read_char(state);
                 if (str_length >= str_capacity) {
                     str_capacity *= 2;
                     str = realloc(str, str_capacity * sizeof(char));
                     if (str == NULL) {
-                        printf("ERROR: out of memory" ENDL);
+                        printf(ERROR "out of memory" ENDL);
                         return false;
                     }
                 }
@@ -530,7 +571,7 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                       (str[str_length - 1] >= '0' && str[str_length - 1] <= '9') ||
                        str[str_length - 1] == '_') && !state->ended);
             str[str_length - 1] = '\0';
-            fsetpos(state->f_src, &start);
+            cmp_tokenizer_set_pos(state, start);
             return cmp_tokenizer_push_token(state, (token_t){
                 .type = TOKEN_KEYWORD,
                 .str = str,
@@ -540,13 +581,13 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
             uint32_t str_length = 0, str_capacity = 1;
             char *str = malloc(str_capacity * sizeof(char));
             if (str == NULL) {
-                printf("ERROR: out of memory" ENDL);
+                printf(ERROR "out of memory" ENDL);
                 return false;
             }
             cmp_tokenizer_read_char(state);
             cmp_tokenizer_read_char(state);
             do {
-                fgetpos(state->f_src, &start);
+                start = state->pos;
                 str[str_length++] = cmp_tokenizer_read_char(state);
                 if (str[str_length - 1] == '\'') {
                     str_length--;
@@ -555,13 +596,13 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                     str_capacity *= 2;
                     str = realloc(str, str_capacity * sizeof(char));
                     if (str == NULL) {
-                        printf("ERROR: out of memory" ENDL);
+                        printf(ERROR "out of memory" ENDL);
                         return false;
                     }
                 }
             } while ((str[str_length - 1] >= '0' && str[str_length - 1] <= '1') && !state->ended);
             str[str_length - 1] = '\0';
-            fsetpos(state->f_src, &start);
+            cmp_tokenizer_set_pos(state, start);
             return cmp_tokenizer_push_token(state, (token_t){
                 .type = TOKEN_INT_BIN,
                 .str = str,
@@ -571,13 +612,13 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
             uint32_t str_length = 0, str_capacity = 1;
             char *str = malloc(str_capacity * sizeof(char));
             if (str == NULL) {
-                printf("ERROR: out of memory" ENDL);
+                printf(ERROR "out of memory" ENDL);
                 return false;
             }
             cmp_tokenizer_read_char(state);
             cmp_tokenizer_read_char(state);
             do {
-                fgetpos(state->f_src, &start);
+                start = state->pos;
                 str[str_length++] = cmp_tokenizer_read_char(state);
                 if (str[str_length - 1] == '\'') {
                     str_length--;
@@ -586,7 +627,7 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                     str_capacity *= 2;
                     str = realloc(str, str_capacity * sizeof(char));
                     if (str == NULL) {
-                        printf("ERROR: out of memory" ENDL);
+                        printf(ERROR "out of memory" ENDL);
                         return false;
                     }
                 }
@@ -595,7 +636,7 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                       (str[str_length - 1] >= 'A' && str[str_length - 1] <= 'F')) &&
                        !state->ended);
             str[str_length - 1] = '\0';
-            fsetpos(state->f_src, &start);
+            cmp_tokenizer_set_pos(state, start);
             return cmp_tokenizer_push_token(state, (token_t){
                 .type = TOKEN_INT_HEX,
                 .str = str,
@@ -605,11 +646,11 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
             uint32_t str_length = 0, str_capacity = 1;
             char *str = malloc(str_capacity * sizeof(char));
             if (str == NULL) {
-                printf("ERROR: out of memory" ENDL);
+                printf(ERROR "out of memory" ENDL);
                 return false;
             }
             do {
-                fgetpos(state->f_src, &start);
+                start = state->pos;
                 str[str_length++] = cmp_tokenizer_read_char(state);
                 if (str[str_length - 1] == '\'') {
                     str_length--;
@@ -618,14 +659,14 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
                     str_capacity *= 2;
                     str = realloc(str, str_capacity * sizeof(char));
                     if (str == NULL) {
-                        printf("ERROR: out of memory" ENDL);
+                        printf(ERROR "out of memory" ENDL);
                         return false;
                     }
                 }
             } while ((str[str_length - 1] >= '0' && str[str_length - 1] <= '9') &&
                       !state->ended);
             str[str_length - 1] = '\0';
-            fsetpos(state->f_src, &start);
+            cmp_tokenizer_set_pos(state, start);
             return cmp_tokenizer_push_token(state, (token_t){
                 .type = str[0] == '0' ? TOKEN_INT_OCT : TOKEN_INT_DEC,
                 .str = str,
@@ -636,6 +677,8 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
             do {
                 c = cmp_tokenizer_read_char(state);
             } while (c != '\n' && !state->ended);
+            state->last_linebreak_pos = state->pos;
+            state->current_line++;
             continue;
         } else if (f_buffer[0] == '/' && f_buffer[1] == '*') {
             cmp_tokenizer_read_char(state);
@@ -704,14 +747,22 @@ bool cmp_tokenizer_run(const char *f_path, token_t **tokens, uint32_t *tokens_co
 
 	FILE *f = fopen(f_path, "r");
 	if (f == NULL) {
-        printf("ERROR: could not open source file \"%s\"" ENDL, f_path);
+        printf(ERROR "could not open source file \"%s\"" ENDL, f_path);
         return false;
 	}
 
     tokenizer_state_t state = {
+        .f_path = f_path,
         .f_src = f,
         .tokens = tokens,
         .tokens_count = tokens_count,
+        .pos = {
+            .i = -1,
+        },
+        .last_linebreak_pos = {
+            .i = -1,
+        },
+        .current_line = 1,
     };
     while (!state.ended) {
         if (!cmp_tokenizer_read_token(&state)) {
@@ -722,23 +773,100 @@ bool cmp_tokenizer_run(const char *f_path, token_t **tokens, uint32_t *tokens_co
     fclose(f);
 
     uint32_t deleted_tokens = 0;
+    uint32_t *bracket_indices = NULL;
+    uint32_t bracket_count = 0;
     for (uint32_t i = 0; i < *tokens_count; i++) {
         if (i < (*tokens_count) - 1) {
             if ((*tokens)[i].type == TOKEN_DIRECTIVE && (*tokens)[i + 1].type == TOKEN_ENDL) {
-                printf("ERROR: line break after #directive" ENDL);
+                printf(TOKEN_POS_FORMAT ERROR "line break after #directive" ENDL, TOKEN_POS_FORMAT_VALUES((*tokens)[i]));
                 return false;
             }
         }
-        if ((*tokens)[i].type == TOKEN_BACKSLASH || (*tokens)[i].type == TOKEN_ENDL) {
-            memcpy(&(*tokens)[i], &(*tokens)[i + 1], ((*tokens_count) - i) * sizeof(token_t));
-            (*tokens_count)--;
-            deleted_tokens++;
+        switch ((*tokens)[i].type) {
+            case TOKEN_BACKSLASH:
+            case TOKEN_ENDL:
+                memcpy(&(*tokens)[i], &(*tokens)[i + 1], ((*tokens_count) - i) * sizeof(token_t));
+                (*tokens_count)--;
+                deleted_tokens++;
+                break;
+            case TOKEN_BRACKET_R_L:
+            case TOKEN_BRACKET_S_L:
+            case TOKEN_BRACKET_C_L:
+                bracket_count++;
+                bracket_indices = realloc(bracket_indices, bracket_count * sizeof(uint32_t));
+                if (bracket_indices == NULL) {
+                    printf(ERROR "out of memory" ENDL);
+                    return false;
+                }
+                bracket_indices[bracket_count - 1] = i;
+                break;
+            case TOKEN_BRACKET_R_R:
+            case TOKEN_BRACKET_S_R:
+            case TOKEN_BRACKET_C_R:
+                if (bracket_count == 0) {
+                    printf(TOKEN_POS_FORMAT ERROR "superfluous closing bracket" ENDL, TOKEN_POS_FORMAT_VALUES((*tokens)[i]));
+                    free(bracket_indices);
+                    return false;
+                }
+                bracket_count--;
+                if ((*tokens)[bracket_indices[bracket_count]].type == TOKEN_BRACKET_R_L && (*tokens)[i].type == TOKEN_BRACKET_R_R) {
+                    break;
+                } else if ((*tokens)[bracket_indices[bracket_count]].type == TOKEN_BRACKET_S_L && (*tokens)[i].type == TOKEN_BRACKET_S_R) {
+                    break;
+                } else if ((*tokens)[bracket_indices[bracket_count]].type == TOKEN_BRACKET_C_L && (*tokens)[i].type == TOKEN_BRACKET_C_R) {
+                    break;
+                } else {
+                    printf(TOKEN_POS_FORMAT ERROR "incorrect closing bracket: expected '", TOKEN_POS_FORMAT_VALUES((*tokens)[i]));
+                    if ((*tokens)[bracket_indices[bracket_count]].type == TOKEN_BRACKET_R_L) {
+                        printf(")");
+                    } else if ((*tokens)[bracket_indices[bracket_count]].type == TOKEN_BRACKET_S_L) {
+                        printf("]");
+                    } else if ((*tokens)[bracket_indices[bracket_count]].type == TOKEN_BRACKET_C_L) {
+                        printf("}");
+                    } else {
+                        printf("?");
+                    }
+                    printf("', got '");
+                    if ((*tokens)[i].type == TOKEN_BRACKET_R_R) {
+                        printf(")");
+                    } else if ((*tokens)[i].type == TOKEN_BRACKET_S_R) {
+                        printf("]");
+                    } else if ((*tokens)[i].type == TOKEN_BRACKET_C_R) {
+                        printf("}");
+                    } else {
+                        printf("?");
+                    }
+                    printf("'" ENDL);
+                    free(bracket_indices);
+                    return false;
+                }
+            default:
+                break;
         }
+    }
+    for (uint32_t i = 0; i < bracket_count; i++) {
+        printf(TOKEN_POS_FORMAT ERROR "missing closing bracket '", TOKEN_POS_FORMAT_VALUES((*tokens)[bracket_indices[bracket_count - i - 1]]));
+        if ((*tokens)[bracket_indices[bracket_count - i - 1]].type == TOKEN_BRACKET_R_L) {
+            printf(")");
+        } else if ((*tokens)[bracket_indices[bracket_count - i - 1]].type == TOKEN_BRACKET_S_L) {
+            printf("]");
+        } else if ((*tokens)[bracket_indices[bracket_count - i - 1]].type == TOKEN_BRACKET_C_L) {
+            printf("}");
+        } else {
+            printf("?");
+        }
+        printf("'" ENDL);
+    }
+    if (bracket_indices != NULL) {
+        free(bracket_indices);
+    }
+    if (bracket_count > 0) {
+        return false;
     }
     if (deleted_tokens > 0) {
         *tokens = realloc(*tokens, (*tokens_count) * sizeof(token_t));
         if (*tokens == NULL) {
-            printf("ERROR: tokenizer out of memory" ENDL);
+            printf(ERROR "tokenizer out of memory" ENDL);
             return false;
         }
     }
