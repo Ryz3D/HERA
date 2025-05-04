@@ -71,6 +71,7 @@ bool cmp_inter_generate(const char *f_path, inter_ins_t **inter_ins, uint32_t *i
     // TODO: all functions at corresponding labels (temporary inter_ins_t[], then copy to big one including labels)
     cmp_inter_generate_from_context(&ctx, "main", inter_ins, inter_ins_count);
     // TODO: add code at 0x0000 to jump to label main
+    // TODO: expression steps to ordered instructions (resolve pointers, do arithmetics)
 
     return true;
 }

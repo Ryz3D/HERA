@@ -46,8 +46,19 @@ typedef struct ast_element {
 } ast_element_t;
 
 typedef struct parser_state {
+    ast_element_t *ast;
+    token_t *tokens;
+    uint32_t tokens_count;
     uint32_t i;
 } parser_state_t;
+
+token_t *cmp_parser_get_token(parser_state_t *state, uint32_t offset) {
+    if (state->i + offset >= state->tokens_count) {
+        return &state->tokens[state->tokens_count - 1];
+    } else {
+        return &state->tokens[state->i + offset];
+    }
+}
 
 void cmp_parser_init_ast_element(ast_element_t *ast) {
     ast->type = AST_UNKNOWN;
@@ -68,13 +79,70 @@ ast_element_t *cmp_parser_add_ast_element(ast_element_t *ast) {
     return &ast->children[ast->children_count - 1];
 }
 
+// returns index of token for closing bracket, 0 if not found
+uint32_t cmp_parser_find_closing_bracket(parser_state_t *state) {
+    uint32_t level = 0;
+    for (uint32_t offset = 0; offset < state->tokens_count; offset++) {
+        token_t *current_token = cmp_parser_get_token(state, offset);
+        switch (current_token->type) {
+            case TOKEN_EOF:
+                return 0;
+            case TOKEN_BRACKET_R_L:
+            case TOKEN_BRACKET_C_L:
+            case TOKEN_BRACKET_S_L:
+                level++;
+                break;
+            case TOKEN_BRACKET_R_R:
+            case TOKEN_BRACKET_C_R:
+            case TOKEN_BRACKET_S_R:
+                if (level-- <= 1) // should equal 1
+                    return state->i + offset;
+                break;
+            default:
+                break;
+        }
+    }
+    return 0;
+}
+
 // returns false if not an expression
-bool cmp_parser_parse_expression(ast_element_t **ast) {
-    return true;
+bool cmp_parser_parse_expression(parser_state_t *state) {
+    // TODO: all operations as AST types (expression can contain variables, calls, literals and any operation, operations can contain expressions as operands)
+    // TODO: shunting yard algorithm?
+    // TODO: how is space for temporary variables calculated? probably due to tree depth (levels of nested complex expressions with child operations as both operands)
+    //        -> allocate at compile-time for most complex calculation in program?
+    /*
+
+    x + 3 * (*y)
+
+    x     3   y
+    |     |   |
+    |     | deref
+    |     |   |
+    |    multiply
+    |       |
+    \- add -/
+        |
+
+    */
+    if (cmp_parser_get_token(state, 0)->type == TOKEN_KEYWORD) {
+        state->i++;
+        if (cmp_parser_get_token(state, 0)->type == TOKEN_BRACKET_R_L) {
+            // function call
+            state->i = cmp_parser_find_closing_bracket(state);
+            return true;
+        } else {
+            // variable
+            return true;
+        }
+    } else {
+        // probably literal
+    }
+    return false;
 }
 
 // returns false if not an instruction
-bool cmp_parser_parse_instruction(ast_element_t **ast) {
+bool cmp_parser_parse_instruction(parser_state_t *state) {
     // function((parameters))
     // (((modifiers) type) lvalue = ) expression
     // if (expression) {} else if {} else {}
@@ -88,7 +156,8 @@ bool cmp_parser_parse_instruction(ast_element_t **ast) {
 }
 
 // returns false if not a declaration
-bool cmp_parser_parse_declaration(ast_element_t **ast) {
+bool cmp_parser_parse_declaration(parser_state_t *state) {
+    // TODO: importantly increment state->i
     // typedef
     // global variable
     // function
@@ -119,15 +188,21 @@ bool cmp_parser_run(const char *f_path, ast_element_t *ast) {
     }
     cmp_tokenizer_free(tokens1, tokens1_count);
 
-    for (uint32_t i = 0; i < tokens2_count; i++) {
-        if (tokens2[i].type < TOKEN_STR_COUNT) {
-            printf("token %u: %i\t%s" ENDL, i, tokens2[i].type, token_str[tokens2[i].type]);
+    parser_state_t state = {
+        .tokens = tokens2,
+        .tokens_count = tokens2_count,
+        .ast = ast,
+    };
+
+    while (state.i < state.tokens_count) {
+        if (cmp_parser_parse_declaration(&state)) {
+            continue;
         } else {
-            printf("token %u: %i\t%s" ENDL, i, tokens2[i].type, tokens2[i].str);
+            printf(TOKEN_POS_FORMAT ERROR "unexpected token. expected top-level declaration" ENDL, TOKEN_POS_FORMAT_VALUES(state.tokens[state.i]));
+            return false;
         }
     }
 
-    // TODO: parse tokens using cmp_parser_parse_declaration
     // TODO: cmp_parser_free(ast);
 
     cmp_tokenizer_free(tokens2, tokens2_count);

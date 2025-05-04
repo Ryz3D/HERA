@@ -51,6 +51,10 @@ typedef struct asm_instruction {
 // returns false on error
 bool cmp_asm_generate(inter_ins_t *inter_ins, uint32_t inter_ins_count, asm_instruction_t **asm_ins, uint32_t *asm_ins_count) {
     *asm_ins = malloc(1 * sizeof(asm_instruction_t));
+    if (*asm_ins == NULL) {
+        printf(ERROR "out of memory" ENDL);
+        return false;
+    }
     *asm_ins_count = 0;
 
     // TODO: iterate through intermediate code instrucitons, convert to hera assembly instructions
