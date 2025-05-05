@@ -6,8 +6,34 @@
 typedef enum ast_type {
     // purely structural (no "token.str" content)
     AST_ROOT,                 // children: {AST_FUNCTION_DECL|AST_VARIABLE_DECL|AST_TYPEDEF}[]
-    AST_EXPRESSION,           // now this is tricky (arrays, structs, struct initializers, casts, dereferencing, in/decrementing)
-    AST_INSTRUCTION,          // children: (AST_BODY|AST_FUNCTION_CALL|AST_VARIABLE_DECL|AST_ASSIGNMENT|AST_EXPRESSION|AST_IF|AST_WHILE|AST_DO_WHILE|AST_FOR|AST_SWITCH)
+    AST_EXPRESSION,           // children: {AST_C_INT_LITERAL|AST_VARIABLE|AST_FUNCTION_CALL|any operation}
+    AST_VARIABLE,             // children: {AST_C_NAME|AST_STRUCT_ACCESS|AST_STRUCT_IND_ACCESS}
+    AST_IMMEDIATE_STRUCT,     // TODO
+    AST_STRUCT_ACCESS,        // children: AST_EXPRESSION, AST_C_NAME
+    AST_OP_BOOL_NOT,          // children: AST_EXPRESSION
+    AST_OP_BIT_NOT,           // children: -"-
+    AST_OP_DEREFERENCE,       // children: -"-
+    AST_OP_ASSIGNMENT,        // children: AST_EXPRESSION, AST_EXPRESSION
+    AST_ARRAY_ACCESS,         // children: -"-
+    AST_OP_ADD,               // children: -"-
+    AST_OP_SUB,               // children: -"-
+    AST_OP_MUL,               // children: -"-
+    AST_OP_DIV,               // children: -"-
+    AST_OP_MOD,               // children: -"-
+    AST_OP_BIT_AND,           // children: -"-
+    AST_OP_BIT_OR,            // children: -"-
+    AST_OP_BIT_XOR,           // children: -"-
+    AST_OP_BIT_SHIFTL,        // children: -"-
+    AST_OP_BIT_SHIFTR,        // children: -"-
+    AST_OP_BOOL_AND,          // children: -"-
+    AST_OP_BOOL_OR,           // children: -"-
+    AST_OP_EQUAL,             // children: -"-
+    AST_OP_UNEQUAL,           // children: -"-
+    AST_OP_LESS_EQUAL,        // children: -"-
+    AST_OP_GREATER_EQUAL,     // children: -"-
+    AST_OP_LESS,              // children: -"-
+    AST_OP_GREATER,           // children: -"-
+    AST_INSTRUCTION,          // children: (AST_BODY|AST_FUNCTION_CALL|AST_VARIABLE_DECL|AST_OP_ASSIGNMENT|AST_EXPRESSION|AST_IF|AST_WHILE|AST_DO_WHILE|AST_FOR|AST_SWITCH)
     AST_BODY,                 // children: (AST_INSTRUCTION[])
     AST_TYPE,                 // children: AST_TYPE_NORMAL|AST_TYPE_STRUCT|AST_TYPE_ENUM
     AST_TYPE_NORMAL,          // children: (AST_C_TYPE_MODIFIER[]), AST_C_PURE_TYPE
@@ -20,7 +46,6 @@ typedef enum ast_type {
     AST_RETURN,               // children: (AST_EXPRESSION)
     AST_FUNCTION_CALL,        // children: AST_C_NAME, (AST_EXPRESSION[])
     AST_VARIABLE_DECL,        // children: AST_TYPE, AST_C_NAME, (AST_EXPRESSION)
-    AST_ASSIGNMENT,           // children: AST_EXPRESSION, AST_EXPRESSION
     AST_IF,                   // children: AST_EXPRESSION, AST_BODY, (AST_ELSE_IF[]), (AST_ELSE)
     AST_ELSE,                 // children: AST_BODY
     AST_ELSE_IF,              // children: AST_EXPRESSION, AST_BODY
@@ -34,6 +59,8 @@ typedef enum ast_type {
     AST_C_NAME,
     AST_C_TYPE_MODIFIER,
     AST_C_PURE_TYPE,
+    AST_C_INT_LITERAL,
+    AST_C_STRING_LITERAL,
     // invalid
     AST_UNKNOWN,
 } ast_type_t;
@@ -125,6 +152,9 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
         |
 
     */
+
+    // TODO: construct list of operands and operators (if operand expected, '*' is deref, not multiply)
+    bool expect_operand = true;
     if (cmp_parser_get_token(state, 0)->type == TOKEN_KEYWORD) {
         state->i++;
         if (cmp_parser_get_token(state, 0)->type == TOKEN_BRACKET_R_L) {
@@ -133,11 +163,27 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
             return true;
         } else {
             // variable
+            // TODO: struct access, struct indirect access, array access
             return true;
         }
     } else {
-        // probably literal
+        // probably literal (int/char/string)
+        // possibly brackets (expression goes until closing bracket)
     }
+    // TODO: if list is only one operand, add and return true
+
+    for (int8_t search_prc = 5; search_prc >= 0; search_prc--) {
+        for (uint32_t exp_i = 0; exp_i < 100000; exp_i++) {
+            // TODO: if current operator is of search_prc
+            if (true) {
+                // TODO: set in single AST element -> parse operands (1 or 2, left or right, check if list contains left or right elements) as expressions (or use AST elements from previously parsed expressions)
+                //   -> TODO: recursive variant with certain range instead of i
+                // TODO: somehow store AST element (copy from single element) as replacement for token index range -> use as operand from now on
+            }
+        }
+    }
+    // TODO: single element should now contain expression root node, if still empty return false
+
     return false;
 }
 
