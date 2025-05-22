@@ -65,38 +65,26 @@ typedef enum token_type {
     TOKEN_UNKNOWN,
 } token_type_t;
 
-bool cmp_tokenizer_token_prefix_un_operator(token_type_t t) {
-    if (t == TOKEN_DOUBLE_PLUS ||
-        t == TOKEN_DOUBLE_MINUS ||
-        t == TOKEN_PLUS ||
-        t == TOKEN_MINUS ||
-        t == TOKEN_STAR ||
-        t == TOKEN_AMPERSAND ||
-        t == TOKEN_EXCLAMATION ||
-        t == TOKEN_TILDE) {
-        return true;
-    }
-    return false;
-}
-
-bool cmp_tokenizer_token_suffix_un_operator(token_type_t t) {
-    if (t == TOKEN_DOUBLE_PLUS ||
-        t == TOKEN_DOUBLE_MINUS) {
-        return true;
-    }
-    return false;
-}
-
-int8_t cmp_tokenizer_precedence_un_operator(token_type_t t) {
+int8_t cmp_tokenizer_precedence_prefix_un_operator(token_type_t t) {
     switch (t) {
+        case TOKEN_DOUBLE_PLUS:
+        case TOKEN_DOUBLE_MINUS:
         case TOKEN_PLUS:
         case TOKEN_MINUS:
-        case TOKEN_DOUBLE_PLUS: // TODO: highest precedence if postfix
-        case TOKEN_DOUBLE_MINUS:
         case TOKEN_STAR:
         case TOKEN_AMPERSAND:
         case TOKEN_EXCLAMATION:
         case TOKEN_TILDE:
+            return 2;
+        default:
+            return 0;
+    }
+}
+
+int8_t cmp_tokenizer_precedence_suffix_un_operator(token_type_t t) {
+    switch (t) {
+        case TOKEN_DOUBLE_PLUS:
+        case TOKEN_DOUBLE_MINUS:
             return 1;
         default:
             return 0;
@@ -105,6 +93,10 @@ int8_t cmp_tokenizer_precedence_un_operator(token_type_t t) {
 
 int8_t cmp_tokenizer_precedence_bi_operator(token_type_t t) {
     switch (t) {
+        case TOKEN_BRACKET_S_L:
+        case TOKEN_DOT:
+        case TOKEN_ARROW:
+            return 1;
         case TOKEN_STAR:
         case TOKEN_SLASH:
         case TOKEN_PERCENT:

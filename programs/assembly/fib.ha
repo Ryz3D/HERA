@@ -95,11 +95,14 @@ inc defaults.ha;
     0x1002 -> RAM_P;
     RAM -> B;
     ADD -> C;
+    "end" -> PC_C;
     0x1001 -> RAM_P;
     B -> RAM;
     0x1002 -> RAM_P;
     C -> RAM;
     "loop" -> PC;
+"end":
+    "end" -> PC;
 
 # OPTIMIZATION
 # main:

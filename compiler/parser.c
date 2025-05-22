@@ -8,7 +8,7 @@ typedef enum ast_type {
     AST_ROOT,                 // children: {AST_FUNCTION_DECL|AST_VARIABLE_DECL|AST_TYPEDEF}[]
     AST_EXPRESSION,           // children: {AST_C_INT_LITERAL|AST_VARIABLE|AST_FUNCTION_CALL|any operation}
     AST_VARIABLE,             // children: {AST_C_NAME|AST_STRUCT_ACCESS|AST_STRUCT_IND_ACCESS}
-    AST_IMMEDIATE_STRUCT,     // TODO
+    AST_COMPOUND_LITERAL,     // TODO
     AST_STRUCT_ACCESS,        // children: AST_EXPRESSION, AST_C_NAME
     AST_OP_BOOL_NOT,          // children: AST_EXPRESSION
     AST_OP_BIT_NOT,           // children: -"-
@@ -122,7 +122,7 @@ uint32_t cmp_parser_find_closing_bracket(parser_state_t *state) {
             case TOKEN_BRACKET_R_R:
             case TOKEN_BRACKET_C_R:
             case TOKEN_BRACKET_S_R:
-                if (level-- <= 1) // should equal 1
+                if (level-- <= 1)
                     return state->i + offset;
                 break;
             default:
@@ -134,9 +134,8 @@ uint32_t cmp_parser_find_closing_bracket(parser_state_t *state) {
 
 // returns false if not an expression
 bool cmp_parser_parse_expression(parser_state_t *state) {
-    // TODO: all operations as AST types (expression can contain variables, calls, literals and any operation, operations can contain expressions as operands)
-    // TODO: shunting yard algorithm?
     // TODO: how is space for temporary variables calculated? probably due to tree depth (levels of nested complex expressions with child operations as both operands)
+    //        -> push/pop?
     //        -> allocate at compile-time for most complex calculation in program?
     /*
 
@@ -155,20 +154,97 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
 
     // TODO: construct list of operands and operators (if operand expected, '*' is deref, not multiply)
     bool expect_operand = true;
-    if (cmp_parser_get_token(state, 0)->type == TOKEN_KEYWORD) {
-        state->i++;
-        if (cmp_parser_get_token(state, 0)->type == TOKEN_BRACKET_R_L) {
-            // function call
-            state->i = cmp_parser_find_closing_bracket(state);
-            return true;
+    bool end_of_expression = false;
+    for (uint32_t offset = 0; !end_of_expression && cmp_parser_get_token(state, offset)->type != TOKEN_EOF; offset++) {
+        token_t *token1 = cmp_parser_get_token(state, offset);
+        if (expect_operand) {
+            if (cmp_tokenizer_precedence_prefix_un_operator(token1->type) != 0) {
+                // TODO: add operation with following expression as operand
+                //  -> always use nested calls? functions needs to end at closing bracket or operator
+                //  -> parse_operand WOULD MAKE SENSE (with prefix/postfix operators including typecast -> returns expression)
+                //  -> how to handle brackets in parse_operand?
+                //  -> parse_operand -> expect operator, brackets or end -> repeat
+                continue;
+            }
+            switch (token1->type) {
+                case TOKEN_KEYWORD: {
+                    token_t *token2 = cmp_parser_get_token(state, ++offset);
+                    if (token2->type == TOKEN_BRACKET_R_L) {
+                        // function call
+                        // TODO: nested expression parser call, then expect closing round bracket
+                        uint32_t end = cmp_parser_find_closing_bracket(state);
+                    } else {
+                        // variable
+                        // TODO: struct access, struct indirect access, array access
+                    }
+                    break;
+                }
+                case TOKEN_INT_DEC:
+                case TOKEN_INT_OCT:
+                case TOKEN_INT_BIN:
+                case TOKEN_INT_HEX:
+                case TOKEN_FLOAT:
+                case TOKEN_CHAR:
+                case TOKEN_STRING:
+                    break;
+                case TOKEN_BRACKET_C_L:
+                    // TODO: typecast expected first
+                    printf(TOKEN_POS_FORMAT ERROR "compound literal not implemented" ENDL, TOKEN_POS_FORMAT_VALUES(*token1));
+                    break;
+                case TOKEN_BRACKET_R_L:
+                    // could be typecast (try by expecting bracket-keyword-bracket, even though that may be a variable), could be order of operations (else)
+                    break;
+                default:
+                    printf(TOKEN_POS_FORMAT ERROR "expected operand" ENDL, TOKEN_POS_FORMAT_VALUES(*token1));
+                    return false;
+            }
         } else {
-            // variable
-            // TODO: struct access, struct indirect access, array access
-            return true;
+            switch (token1->type) {
+                case TOKEN_BRACKET_S_L:
+                    // TODO: array access
+                    // TODO: nested expression parser call, then expect closing square bracket
+                    break;
+                case TOKEN_DOT:
+                case TOKEN_ARROW:
+                    // TODO: struct access
+                    break;
+                case TOKEN_STAR:
+                case TOKEN_SLASH:
+                case TOKEN_PERCENT:
+                case TOKEN_PLUS:
+                case TOKEN_MINUS:
+                case TOKEN_DOUBLE_LEFT:
+                case TOKEN_DOUBLE_RIGHT:
+                case TOKEN_LESS_EQ:
+                case TOKEN_GREATER_EQ:
+                case TOKEN_LESS:
+                case TOKEN_GREATER:
+                case TOKEN_EQUAL:
+                case TOKEN_UNEQUAL:
+                case TOKEN_AMPERSAND:
+                case TOKEN_CIRCUMFLEX:
+                case TOKEN_BAR:
+                case TOKEN_DOUBLE_AMPERSAND:
+                case TOKEN_DOUBLE_BAR:
+                case TOKEN_ASSIGN:
+                case TOKEN_ASSIGN_PLUS:
+                case TOKEN_ASSIGN_MINUS:
+                case TOKEN_ASSIGN_STAR:
+                case TOKEN_ASSIGN_SLASH:
+                case TOKEN_ASSIGN_PERCENT:
+                case TOKEN_ASSIGN_CIRCUMFLEX:
+                case TOKEN_ASSIGN_BAR:
+                case TOKEN_ASSIGN_AMPERSAND:
+                case TOKEN_ASSIGN_DOUBLE_LEFT:
+                case TOKEN_ASSIGN_DOUBLE_RIGHT:
+                    break;
+                default:
+                    state->i += offset;
+                    end_of_expression = true;
+                    break;
+            }
         }
-    } else {
-        // probably literal (int/char/string)
-        // possibly brackets (expression goes until closing bracket)
+        expect_operand = !expect_operand;
     }
     // TODO: if list is only one operand, add and return true
 
