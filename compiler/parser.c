@@ -3,107 +3,32 @@
 
 #include "includes.h"
 
-typedef enum ast_type {
-    // purely structural (no "token.str" content)
-    AST_ROOT,                 // children: {AST_FUNCTION_DECL|AST_VARIABLE_DECL|AST_TYPEDEF}[]
-    AST_EXPRESSION,           // children: {AST_C_INT_LITERAL|AST_VARIABLE|AST_FUNCTION_CALL|any operation}
-    AST_VARIABLE,             // children: {AST_C_NAME|AST_STRUCT_ACCESS|AST_STRUCT_IND_ACCESS}
-    AST_COMPOUND_LITERAL,     // TODO
-    AST_STRUCT_ACCESS,        // children: AST_EXPRESSION, AST_C_NAME
-    AST_OP_BOOL_NOT,          // children: AST_EXPRESSION
-    AST_OP_BIT_NOT,           // children: -"-
-    AST_OP_DEREFERENCE,       // children: -"-
-    AST_OP_ASSIGNMENT,        // children: AST_EXPRESSION, AST_EXPRESSION
-    AST_ARRAY_ACCESS,         // children: -"-
-    AST_OP_ADD,               // children: -"-
-    AST_OP_SUB,               // children: -"-
-    AST_OP_MUL,               // children: -"-
-    AST_OP_DIV,               // children: -"-
-    AST_OP_MOD,               // children: -"-
-    AST_OP_BIT_AND,           // children: -"-
-    AST_OP_BIT_OR,            // children: -"-
-    AST_OP_BIT_XOR,           // children: -"-
-    AST_OP_BIT_SHIFTL,        // children: -"-
-    AST_OP_BIT_SHIFTR,        // children: -"-
-    AST_OP_BOOL_AND,          // children: -"-
-    AST_OP_BOOL_OR,           // children: -"-
-    AST_OP_EQUAL,             // children: -"-
-    AST_OP_UNEQUAL,           // children: -"-
-    AST_OP_LESS_EQUAL,        // children: -"-
-    AST_OP_GREATER_EQUAL,     // children: -"-
-    AST_OP_LESS,              // children: -"-
-    AST_OP_GREATER,           // children: -"-
-    AST_INSTRUCTION,          // children: (AST_BODY|AST_FUNCTION_CALL|AST_VARIABLE_DECL|AST_OP_ASSIGNMENT|AST_EXPRESSION|AST_IF|AST_WHILE|AST_DO_WHILE|AST_FOR|AST_SWITCH)
-    AST_BODY,                 // children: (AST_INSTRUCTION[])
-    AST_TYPE,                 // children: AST_TYPE_NORMAL|AST_TYPE_STRUCT|AST_TYPE_ENUM
-    AST_TYPE_NORMAL,          // children: (AST_C_TYPE_MODIFIER[]), AST_C_PURE_TYPE
-    AST_TYPE_STRUCT,          // children: (AST_C_TYPE_MODIFIER[]), (AST_NAME), (AST_STRUCT_DECL[])
-    AST_STRUCT_MEMBER,        // children: AST_TYPE, AST_C_NAME, (AST_STRUCT_MEMBER_WIDTH)
-    AST_STRUCT_MEMBER_WIDTH,  // children: AST_EXPRESSION
-    AST_TYPE_ENUM,            // children: (AST_C_TYPE_MODIFIER[]), (AST_NAME), (AST_ENUM_MEMBER[])
-    AST_ENUM_MEMBER,          // children: AST_C_NAME, (AST_EXPRESSION)
-    AST_FUNCTION_DECL,        // children: AST_TYPE, AST_C_NAME, (AST_VARIABLE_DECL[]), (AST_BODY)
-    AST_RETURN,               // children: (AST_EXPRESSION)
-    AST_FUNCTION_CALL,        // children: AST_C_NAME, (AST_EXPRESSION[])
-    AST_VARIABLE_DECL,        // children: AST_TYPE, AST_C_NAME, (AST_EXPRESSION)
-    AST_IF,                   // children: AST_EXPRESSION, AST_BODY, (AST_ELSE_IF[]), (AST_ELSE)
-    AST_ELSE,                 // children: AST_BODY
-    AST_ELSE_IF,              // children: AST_EXPRESSION, AST_BODY
-    AST_WHILE,                // children: AST_EXPRESSION, AST_BODY
-    AST_DO_WHILE,             // children: AST_BODY, AST_EXPRESSION
-    AST_FOR,                  // children: AST_INSTRUCTION, AST_EXPRESSION, AST_INSTRUCTION, AST_BODY
-    AST_SWITCH,               // children: AST_CASE[]
-    AST_CASE,                 // children: AST_EXPRESSION, (AST_INSTRUCTION[])
-    AST_TYPEDEF,              // children: AST_TYPE, AST_NAME
-    // purely contentful (no children)
-    AST_C_NAME,
-    AST_C_TYPE_MODIFIER,
-    AST_C_PURE_TYPE,
-    AST_C_INT_LITERAL,
-    AST_C_STRING_LITERAL,
-    // invalid
-    AST_UNKNOWN,
-} ast_type_t;
-
-typedef struct ast_element {
-    ast_type_t type;
-    token_t token;
-    struct ast_element *children;
-    uint32_t children_count;
-} ast_element_t;
-
 typedef struct parser_state {
-    ast_element_t *ast;
+    inter_ins_t *ins;
+    uint32_t ins_count;
     token_t *tokens;
     uint32_t tokens_count;
     uint32_t i;
 } parser_state_t;
 
-token_t *cmp_parser_get_token(parser_state_t *state, uint32_t offset) {
-    if (state->i + offset >= state->tokens_count) {
+token_t *cmp_parser_get_token(parser_state_t *state, int32_t offset) {
+    if (state->i + offset < 0) {
+        return &state->tokens[0];
+    } else if (state->i + offset >= state->tokens_count) {
         return &state->tokens[state->tokens_count - 1];
     } else {
         return &state->tokens[state->i + offset];
     }
 }
 
-void cmp_parser_init_ast_element(ast_element_t *ast) {
-    ast->type = AST_UNKNOWN;
-    ast->token.type = TOKEN_UNKNOWN;
-    ast->token.allocated = false;
-    ast->token.str = NULL;
-    ast->children = NULL;
-    ast->children_count = 0;
-}
-
-ast_element_t *cmp_parser_add_ast_element(ast_element_t *ast) {
-    ast->children_count++;
-    ast->children = realloc(ast->children, ast->children_count * sizeof(ast_element_t));
-    if (ast->children == NULL) {
+bool cmp_parser_add_ins(parser_state_t *state, inter_ins_t ins) {
+    state->ins_count++;
+    state->ins = realloc(state->ins, state->ins_count * sizeof(inter_ins_t));
+    if (state->ins == NULL) {
         printf(ERROR "out of memory");
-        return NULL;
+        return false;
     }
-    return &ast->children[ast->children_count - 1];
+    return true;
 }
 
 // returns index of token for closing bracket, 0 if not found
@@ -132,11 +57,177 @@ uint32_t cmp_parser_find_closing_bracket(parser_state_t *state) {
     return 0;
 }
 
+typedef enum cmp_parser_pure_type {
+    PARSER_TYPE_INVALID,
+    PARSER_TYPE_UINT8,
+    PARSER_TYPE_UINT16,
+    PARSER_TYPE_UINT32,
+    PARSER_TYPE_UINT64,
+    PARSER_TYPE_INT8,
+    PARSER_TYPE_INT16,
+    PARSER_TYPE_INT32,
+    PARSER_TYPE_INT64,
+    PARSER_TYPE_FLOAT,
+    PARSER_TYPE_DOUBLE,
+    PARSER_TYPE_STRUCT,
+} cmp_parser_pure_type_t;
+
+typedef struct cmp_parser_type {
+    cmp_parser_pure_type_t pure_type;
+    uint8_t pointers;
+} cmp_parser_type_t;
+
+typedef struct cmp_parser_value {
+    bool valid;
+    cmp_parser_type_t type;
+    uint16_t i;
+} cmp_parser_value_t;
+
+bool cmp_parser_is_value(token_type_t type) {
+    switch (type) {
+        case TOKEN_INT_BIN:
+        case TOKEN_INT_OCT:
+        case TOKEN_INT_DEC:
+        case TOKEN_INT_HEX:
+        case TOKEN_CHAR:
+        case TOKEN_STRING:
+            return true;
+        default:
+            return false;
+    }
+}
+
+// TODO: first parse each constant/variable/function call as typed value
+// then consider operand types for each operation
+//   -> which determines push/pop operations (especially how many times)
+//   -> which returns a resulting value type
+
+cmp_parser_value_t cmp_parser_get_value(token_t *t) {
+    if (t == NULL) {
+        return (cmp_parser_value_t){
+            .valid = false,
+        };
+    }
+    switch (t->type) {
+        case TOKEN_INT_BIN:
+            uint16_t n = 0;
+            for (uint32_t i = 0; i < strlen(t->str); i++) {
+                n += t->str[i] - '0';
+                n *= 2;
+            }
+            return (cmp_parser_value_t){
+                .valid = true,
+                .type = {.pure_type = PARSER_TYPE_UINT16, .pointers = 0},
+                .i = n,
+            };
+        case TOKEN_INT_OCT:
+            uint16_t n = 0;
+            for (uint32_t i = 0; i < strlen(t->str); i++) {
+                n += t->str[i] - '0';
+                n *= 8;
+            }
+            return (cmp_parser_value_t){
+                .valid = true,
+                .type = {.pure_type = PARSER_TYPE_UINT16, .pointers = 0},
+                .i = n,
+            };
+        case TOKEN_INT_DEC:
+            uint16_t n = 0;
+            for (uint32_t i = 0; i < strlen(t->str); i++) {
+                n += t->str[i] - '0';
+                n *= 10;
+            }
+            return (cmp_parser_value_t){
+                .valid = true,
+                .type = {.pure_type = PARSER_TYPE_UINT16, .pointers = 0},
+                .i = n,
+            };
+        case TOKEN_INT_HEX:
+            uint16_t n = 0;
+            for (uint32_t i = 0; i < strlen(t->str); i++) {
+                if (t->str[i] >= 'a' && t->str[i] <= 'f') {
+                    n += t->str[i] - 'a' + 10;
+                } else if (t->str[i] >= 'A' && t->str[i] <= 'F') {
+                    n += t->str[i] - 'A' + 10;
+                } else {
+                    n += t->str[i] - '0';
+                }
+                n *= 16;
+            }
+            return (cmp_parser_value_t){
+                .valid = true,
+                .type = {.pure_type = PARSER_TYPE_UINT16, .pointers = 0},
+                .i = n,
+            };
+        case TOKEN_CHAR:
+            return (cmp_parser_value_t){
+                .valid = true,
+                .type = {.pure_type = PARSER_TYPE_INT8, .pointers = 0},
+                .i = t->str[0],
+            };
+        case TOKEN_STRING:
+            // TODO: call constant allocator (has to be placed in ram by init routine, either at start or (preferably) at assignment)
+            // and return address
+            return (cmp_parser_value_t){
+                .valid = true,
+                .type = {.pure_type = PARSER_TYPE_INT8, .pointers = 1},
+                .i = t->str[0],
+            };
+        default:
+            return (cmp_parser_value_t){
+                .valid = false,
+            };
+    }
+}
+
+// returns false if not a variable, constant or function call
+bool cmp_parser_push_value(parser_state_t *state) {
+    token_t *t = cmp_parser_get_token(state, 0);
+    cmp_parser_value_t constant_value = cmp_parser_get_value(t);
+    if (constant_value.valid) {
+        // TODO: cmp_parser_add_ins(state, );
+        // TODO: intermediate instruction types for math/bit operation (maybe only variable-variable, constant will be loaded into register or ram)
+        //         -> this might replace unary operators in assignment ins
+        // TODO: intermediate instruction types for push/pop
+        // TODO: intermediate instruction types for push/pop
+    } else if (t->type == TOKEN_KEYWORD) {
+        // TODO: variable or function call?
+        // remember: you generate intermediate code, you can simply use the variable name
+    }
+    return false;
+}
+
 // returns false if not an expression
 bool cmp_parser_parse_expression(parser_state_t *state) {
-    // TODO: how is space for temporary variables calculated? probably due to tree depth (levels of nested complex expressions with child operations as both operands)
-    //        -> push/pop?
-    //        -> allocate at compile-time for most complex calculation in program?
+    /*
+    TODO: temp algorithm
+    - accept prefix unary operator
+    - expect variable, constant or function call
+    - if unary operator
+     - process and exit
+    - else
+     - accept suffix unary operator
+     - if unary operator
+      - process and exit
+     - else
+      - expect binary operator
+      - expect variable, constant or function call
+    */
+
+    token_t *prefix_un_op = NULL;
+    if (cmp_tokenizer_precedence_prefix_un_operator(cmp_parser_get_token(state, 0)->type) != 0) {
+        prefix_un_op = cmp_parser_get_token(state, 0);
+        state->i++;
+    }
+    if (cmp_parser_get_token(state, 0)->type == TOKEN_KEYWORD) {
+    } else if (cmp_parser_get_token(state, 0)->type == TOKEN_INT_BIN) {
+    } else if (cmp_parser_get_token(state, 0)->type == TOKEN_INT_OCT) {
+    } else if (cmp_parser_get_token(state, 0)->type == TOKEN_INT_DEC) {
+    } else if (cmp_parser_get_token(state, 0)->type == TOKEN_INT_HEX) {
+    }
+
+    return true;
+
     /*
 
     x + 3 * (*y)
@@ -264,7 +355,7 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
 }
 
 // returns false if not an instruction
-bool cmp_parser_parse_instruction(parser_state_t *state) {
+bool cmp_parser_parse_expression_1(parser_state_t *state) {
     // function((parameters))
     // (((modifiers) type) lvalue = ) expression
     // if (expression) {} else if {} else {}
@@ -274,15 +365,19 @@ bool cmp_parser_parse_instruction(parser_state_t *state) {
     // switch (expression) { case expression }
     // return expression
     // break/continue
+
+    // differentiate:
+    // - expressions (even assignment), this is most instructions
+    // - expressions + declaration (also allowed in for-loop init)
+    // - expressions + declaration + typedef + flow (function body)
+    // - declaration + typedef + func definition/declaration (file)
+
     return true;
 }
 
 // returns false if not a declaration
-bool cmp_parser_parse_declaration(parser_state_t *state) {
+bool cmp_parser_parse_var_declaration(parser_state_t *state) {
     // TODO: importantly increment state->i
-    // typedef
-    // global variable
-    // function
     return true;
 }
 

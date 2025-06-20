@@ -38,6 +38,12 @@ int main(int argc, char *argv[]) {
     }
     free(asm_ins);
 
+    /*
+    TODO:
+    - optimize
+     - simulate intermediate program, save known state, reset on label
+    */
+
     FILE *f_bin = fopen("compiled.bin", "w");
     if (f_bin == NULL) {
         printf(ERROR "failed to open binary output file" ENDL);

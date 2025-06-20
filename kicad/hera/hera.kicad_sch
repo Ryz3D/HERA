@@ -1,0 +1,708 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "6868e9eb-d1d4-45cb-8fc8-14949ab4307f")
+	(paper "A4")
+	(lib_symbols)
+	(junction
+		(at 82.55 17.78)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b39115af-035f-449d-bca2-9c72d3b1cbfb")
+	)
+	(bus
+		(pts
+			(xy 82.55 17.78) (xy 107.95 17.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "193f7d8b-09a6-4c43-98fe-ced173f79e11")
+	)
+	(bus
+		(pts
+			(xy 107.95 17.78) (xy 107.95 21.59)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "196f5809-8823-44e3-989d-dcb5c687bd79")
+	)
+	(bus
+		(pts
+			(xy 82.55 21.59) (xy 83.82 21.59)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5016b18d-2726-429e-8d66-f410e9a0ae7e")
+	)
+	(bus
+		(pts
+			(xy 58.42 21.59) (xy 57.15 21.59)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "567abd69-3479-4cd5-bc86-e29a62c6cacc")
+	)
+	(bus
+		(pts
+			(xy 82.55 17.78) (xy 82.55 21.59)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6a583729-23a8-4164-b240-df8090e3776f")
+	)
+	(bus
+		(pts
+			(xy 57.15 17.78) (xy 82.55 17.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9f563202-df0c-45df-be9f-92acd3639ac4")
+	)
+	(bus
+		(pts
+			(xy 107.95 21.59) (xy 109.22 21.59)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "efad29d4-e61c-4cb7-a582-bd75a8858cba")
+	)
+	(bus
+		(pts
+			(xy 57.15 21.59) (xy 57.15 17.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fa869336-8fbb-4ace-a72f-cf0401f923f8")
+	)
+	(sheet
+		(at 157.48 85.09)
+		(size 12.7 7.62)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "0ddc7f58-f94b-4736-bddb-ac11feba981b")
+		(property "Sheetname" "adder_1_1"
+			(at 157.48 84.3784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "adder_1.kicad_sch"
+			(at 157.48 93.2946 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "A" input
+			(at 157.48 86.36 180)
+			(uuid "a1c46cf2-5c48-4c4f-b4c2-770f0c78df67")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "B" input
+			(at 157.48 88.9 180)
+			(uuid "13e7c354-165c-49a8-b3da-1e4703e38ee3")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "CI" input
+			(at 157.48 91.44 180)
+			(uuid "338cf3dc-1118-436b-80ee-a84a39f398e2")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "S" input
+			(at 170.18 87.63 0)
+			(uuid "cc3c5a4e-b282-47f9-8882-ee31983e11ac")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "CO" input
+			(at 170.18 91.44 0)
+			(uuid "600e674e-5915-44c2-928a-c1c0340e31a2")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f"
+					(page "59")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 109.22 33.02)
+		(size 17.78 5.08)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "3c570bc0-f36e-460b-845c-8f1fe512ca10")
+		(property "Sheetname" "adder_16_1"
+			(at 109.22 32.3084 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "adder_16.kicad_sch"
+			(at 109.22 38.6846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "#READ" input
+			(at 109.22 36.83 180)
+			(uuid "7cdda577-a5de-46ac-bae2-042556128eae")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "Q[0..7]" input
+			(at 127 34.29 0)
+			(uuid "2cd100ec-36c0-4651-9198-0dd0d41bd09a")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "D[0..7]" input
+			(at 109.22 34.29 180)
+			(uuid "52db1355-918c-4193-8f71-69aff7fb9b60")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "#Q[0..7]" input
+			(at 127 36.83 0)
+			(uuid "d6a28017-b8e7-4a94-883b-c777dc5a590c")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f"
+					(page "171")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 58.42 20.32)
+		(size 17.78 5.08)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "65bd18f8-18dc-448b-bb8f-b63612b8469e")
+		(property "Sheetname" "register_8_1"
+			(at 58.42 19.6084 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "register_8.kicad_sch"
+			(at 58.42 25.9846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "#READ" input
+			(at 58.42 24.13 180)
+			(uuid "1605e230-4eef-4fd6-915f-793ac3bd4899")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "Q[0..7]" input
+			(at 76.2 21.59 0)
+			(uuid "f6c983b9-c9e6-4702-9af6-7c4283a61ff8")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "D[0..7]" input
+			(at 58.42 21.59 180)
+			(uuid "98a00373-a86f-4b77-8f64-82a3f38b8aa7")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "#Q[0..7]" input
+			(at 76.2 24.13 0)
+			(uuid "c8d327e0-f2f7-4407-b686-9a15c396f55a")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f"
+					(page "10")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 83.82 20.32)
+		(size 17.78 5.08)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "964d55bc-c706-4987-84da-f992a86d64fd")
+		(property "Sheetname" "register_8_2"
+			(at 83.82 19.6084 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "register_8.kicad_sch"
+			(at 83.82 25.9846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "#READ" input
+			(at 83.82 24.13 180)
+			(uuid "d9973c7e-c020-47ae-9eae-059f723895d8")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "Q[0..7]" input
+			(at 101.6 21.59 0)
+			(uuid "a6993dec-3f92-476d-98ac-83459d581ffa")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "D[0..7]" input
+			(at 83.82 21.59 180)
+			(uuid "9e4d5813-76f4-43ff-a1c2-a54a3014805a")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "#Q[0..7]" input
+			(at 101.6 24.13 0)
+			(uuid "8d183662-c9aa-4bdf-9f11-04ba35622c5d")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f"
+					(page "68")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 109.22 20.32)
+		(size 17.78 5.08)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "a0f5befa-e51c-4531-8f13-c407ed09ffeb")
+		(property "Sheetname" "register_8_3"
+			(at 109.22 19.6084 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "register_8.kicad_sch"
+			(at 109.22 25.9846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "#READ" input
+			(at 109.22 24.13 180)
+			(uuid "d3ef66fd-b325-4df3-b8eb-972d6878f79c")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "Q[0..7]" input
+			(at 127 21.59 0)
+			(uuid "e409de99-2aed-4ea7-aba2-52e36c9dc345")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "D[0..7]" input
+			(at 109.22 21.59 180)
+			(uuid "fdd06bf5-c560-4a89-84e6-3661044aecba")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "#Q[0..7]" input
+			(at 127 24.13 0)
+			(uuid "365b6d61-cd52-454b-9458-6fedb08129ee")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f"
+					(page "117")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 156.21 93.98)
+		(size 15.24 10.16)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "b476920c-8d64-4a95-8978-a679716a9572")
+		(property "Sheetname" "decoder_2_1"
+			(at 156.21 93.2684 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "decoder_2.kicad_sch"
+			(at 156.21 104.7246 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "#D2" input
+			(at 171.45 100.33 0)
+			(uuid "e39c1485-52c9-4c10-95dc-2e71649248dd")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "#D3" input
+			(at 171.45 102.87 0)
+			(uuid "7b9f19cc-de4a-458f-9cc1-83d49ad6bf72")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "#D0" input
+			(at 171.45 95.25 0)
+			(uuid "569a5d8e-e829-43aa-a426-79db956b3d93")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "#D1" input
+			(at 171.45 97.79 0)
+			(uuid "336d83e0-0468-4f08-a6e9-2049ad24c46b")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "D[0..1]" input
+			(at 156.21 99.06 180)
+			(uuid "8ea0840c-cded-4a58-b05d-28e47286e1bc")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f"
+					(page "59")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 154.94 105.41)
+		(size 17.78 7.62)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "c97ce238-54c0-45e8-a2f1-dabea759b912")
+		(property "Sheetname" "gate_buf_1_1"
+			(at 154.94 104.6984 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "gate_buf_1.kicad_sch"
+			(at 154.94 113.6146 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "#BUF" input
+			(at 154.94 111.76 180)
+			(uuid "14cc038f-1255-475a-87d3-603a17ee8d86")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "BUF" input
+			(at 154.94 109.22 180)
+			(uuid "d0fda124-8c9a-4211-ba31-0f3839761d90")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "A" input
+			(at 154.94 106.68 180)
+			(uuid "3dc6e5ba-8023-43b0-ae9a-841129f08adf")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "BUF_#A" input
+			(at 172.72 109.22 0)
+			(uuid "5a584e91-5335-45ee-97f9-90edca5204b0")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f"
+					(page "9")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)

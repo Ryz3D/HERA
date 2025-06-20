@@ -1,0 +1,46 @@
+          y        z
+         *y    2 * z
+        (*y + (2 * z))
+    3 * (*y + (2 * z))
+    3 * (*y + (2 * z)) / 6
+x + 3 * (*y + (2 * z)) / 6
+
+    push x
+        push 3
+            push y
+        pop into a
+            push dereference of a
+                push 2
+                    push z
+                pop into b
+            pop into a
+                push multiplication
+            pop into b
+        pop into a
+            push addition
+        pop into b
+    pop into a
+        push multiplication
+            push 6
+        pop into b
+    pop into a
+        push division
+    pop into b
+pop into a
+    push addition
+
+parse_and_push():
+    if len(expression_children) == 1:
+        parse_and_push(expression_children[0])
+    else:
+        argh
+    for i in expression_children:
+        if complex -> parse_and_push(expression_children[i])
+        else -> push constant or variable
+    pop into b
+    pop into a
+    push calculation
+
+a = expression
+- parse_and_push(expression)
+- pop into a

@@ -1,0 +1,169 @@
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 409:Plugin executed on: 'win32'
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 410:Plugin executed with python version: '3.11.5 (main, Jan 27 2025, 07:08:36) [MSC v.1942 64 bit (AMD64)]'
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 411:KiCad build version: 9.0.2
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 412:Plugin version: 4.0.2
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 413:Frame repr: <wx._core.Frame object at 0x000001E4E1BEC4C0>
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 437:Preparing replicator with Q15 as a reference
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.replicate_layout 117:getting a list of all footprints on board
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 485:source anchor footprint is 'Q15'
+Located on: ['register_1_1', 'gate_nor_2_1']
+With filenames: ['register_1_1.kicad_sch', 'gate_nor_2.kicad_sch']
+With sheet_id:['register_1_1', 'gate_nor_2_1']
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 492:Corresponding footprints are 
+[('Q18', ['register_1_1', 'gate_nor_2_4']), ('Q17', ['register_1_1', 'gate_nor_2_3']), ('Q16', ['register_1_1', 'gate_nor_2_2']), ('Q15', ['register_1_1', 'gate_nor_2_1'])]
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 504:Showing dialog
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.replicate_layout 472:constructing a list of sheets suitable for replication on level:'gate_nor_2_1', file:'gate_nor_2.kicad_sch'
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.replicate_layout 509:suitable sheets are:[['register_1_1', 'gate_nor_2_2'], ['register_1_1', 'gate_nor_2_3'], ['register_1_1', 'gate_nor_2_4']]
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1507:Level selected: ['register_1_1', 'gate_nor_2_1']
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1331:Filtering list of tracks
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 510:Toolbar position: wx.Point(1876, 98)
+05-26 20:25:24 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 515:Dialog position: wx.Point(1437, 98)
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 472:constructing a list of sheets suitable for replication on level:'gate_nor_2_1', file:'gate_nor_2.kicad_sch'
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 509:suitable sheets are:[['register_1_1', 'gate_nor_2_2'], ['register_1_1', 'gate_nor_2_3'], ['register_1_1', 'gate_nor_2_4']]
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 248:Replicating layout
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 288:Starting replication of sheets: [['register_1_1', 'gate_nor_2_2'], ['register_1_1', 'gate_nor_2_3'], ['register_1_1', 'gate_nor_2_4']]
+on level: ['register_1_1', 'gate_nor_2_1']
+with tracks=True, zone=True, text=True, text=True, intersecting=False, remove=True, locked footprints=False, group_only=False
+05-26 20:25:55 root 340:updating GUI message: 'Preparing for replication'
+05-26 20:25:55 root 345:updating GUI with: 0
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 358:Getting the list of source footprints
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 368:Getting the list of all the remaining footprints
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 375:Getting source tracks
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1331:Filtering list of tracks
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 379:Getting source zones
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 383:Getting source text items
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 387:Getting source drawing items
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 320:Removing tracks and zones, before footprint placement
+05-26 20:25:55 root 340:updating GUI message: 'Removing zones and tracks'
+05-26 20:25:55 root 345:updating GUI with: 0
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1277:Remove bounding box top:129525000, bottom:137825000, Left:97545000, Right:105892500
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1277:Remove bounding box top:130975000, bottom:139525000, Left:128607500, Right:137212500
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1277:Remove bounding box top:133800000, bottom:143175000, Left:113982500, Right:123392500
+05-26 20:25:55 root 340:updating GUI message: 'Replicating footprints'
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 861:Replicating footprints
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 868:Replicating footprints on sheet ['register_1_1', 'gate_nor_2_2']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:f4055ac1-f62d-4f70-a467-c7aa073d163e
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:3f997ae7-5329-4381-a7bc-1fc68ce19ff7
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:9822e26c-71be-4290-ba03-9fd330323d98
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:48e02fd9-3017-48b8-9d2b-a3ecc8b724d3
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:3f62d0a4-7070-4a8c-9f32-e230df0f40df
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:9e45cf5e-afed-4df0-908d-2ecdd5bdba69
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:4ea58411-65c8-464b-b114-00c99224a714
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:cbdf2e17-21bb-47f6-a359-d8ba63cc2236
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:89679e5a-169a-4d6b-bf22-b1bb5798dd03
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:b2d71a84-c7c1-457e-9ed7-e34fe5ca5d6c
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:da991743-0f7d-4c92-8147-52fd9aa6f3da
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:846974dd-5c5f-4806-a19c-0431a6c27e1d
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:7e2b7f64-cf60-4e4f-81fe-cdf1964aafe5
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:ef5cedee-a46f-4651-90f2-faeaced67874
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:300d71be-547e-4cd2-b0c2-48db607a7c11
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:5fc860fa-c7f8-4890-8e62-3b394c2ec868
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:de0b31b4-71c4-486b-b879-41b52754d0cc
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:4f1334ea-8528-4bf1-a8a5-84783a2ff564
+05-26 20:25:55 root 345:updating GUI with: 33
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:9934e4cd-8f85-49ac-bb30-8e9bdbc8012e
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:357db321-a714-466d-8e7c-7d842d8dbc7b
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:fdfc8e1d-8827-4d22-9620-e5695ab2635c
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:74d63cc0-ef5f-4b24-ad0e-3790ae1b3b58
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:4be6f4c5-da5b-4d56-a728-12d364ebbbc2
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:cb02d9f2-fb0e-4f07-9363-f63647e333b1
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 868:Replicating footprints on sheet ['register_1_1', 'gate_nor_2_3']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:f4055ac1-f62d-4f70-a467-c7aa073d163e
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:c30eb739-ee73-4fff-b443-103cd6628ac6
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:9822e26c-71be-4290-ba03-9fd330323d98
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:6b74fe3d-c1cc-40f9-9630-c5790ba45147
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:3f62d0a4-7070-4a8c-9f32-e230df0f40df
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:b49595fe-9326-4bb8-a04c-2974f25a9371
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:4ea58411-65c8-464b-b114-00c99224a714
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:27b9b0ce-675d-45d5-8c04-1d3b8c34e650
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:89679e5a-169a-4d6b-bf22-b1bb5798dd03
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:f84d4bd8-f50d-45cb-a9e1-15a99ee460e0
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:da991743-0f7d-4c92-8147-52fd9aa6f3da
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:e4312979-357f-45d6-94e8-e976f7231a2a
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:7e2b7f64-cf60-4e4f-81fe-cdf1964aafe5
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:7fa8311a-b854-407b-88eb-ef6da29ccd06
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:300d71be-547e-4cd2-b0c2-48db607a7c11
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:b830f9cf-a3a1-469c-83bd-c5e6278927a9
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:de0b31b4-71c4-486b-b879-41b52754d0cc
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:3cac2cd8-7b0b-4dca-a5b5-8a160a7fb822
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:9934e4cd-8f85-49ac-bb30-8e9bdbc8012e
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:a75bbf5c-ba6a-41fb-a3d9-7e481c7d52fa
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:fdfc8e1d-8827-4d22-9620-e5695ab2635c
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:cc3f4cad-824b-4622-a78c-86e0f23a7036
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:4be6f4c5-da5b-4d56-a728-12d364ebbbc2
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:d85acfe8-80de-43e2-ad41-10234989639c
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 868:Replicating footprints on sheet ['register_1_1', 'gate_nor_2_4']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:f4055ac1-f62d-4f70-a467-c7aa073d163e
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:b4649326-262d-42c0-8105-85e508191115
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:9822e26c-71be-4290-ba03-9fd330323d98
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:00ba1cbf-fe04-4789-9940-600a4def9c39
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:3f62d0a4-7070-4a8c-9f32-e230df0f40df
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:1cf116b5-69c4-4a9e-9aaf-0436593c1055
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:4ea58411-65c8-464b-b114-00c99224a714
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:65a9b361-521d-457f-a15d-5befff2aa7ae
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:89679e5a-169a-4d6b-bf22-b1bb5798dd03
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:933fcebe-194f-43e4-b743-dbb47e685922
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:da991743-0f7d-4c92-8147-52fd9aa6f3da
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:baa064b8-7083-4c10-a91f-0bba0f10f923
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:7e2b7f64-cf60-4e4f-81fe-cdf1964aafe5
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:f09d4d47-76e1-49ae-8768-5a0aaec642b4
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:300d71be-547e-4cd2-b0c2-48db607a7c11
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:f9861b35-a291-49be-b974-6819ddc4fdb8
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:de0b31b4-71c4-486b-b879-41b52754d0cc
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:736ac188-f561-42b7-95a8-d9233fed6190
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:9934e4cd-8f85-49ac-bb30-8e9bdbc8012e
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:1c1e4e7e-f6b3-44ee-b1f5-ff422736ae81
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:fdfc8e1d-8827-4d22-9620-e5695ab2635c
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:8c7c3e42-ae31-4427-bc39-fecb84263c04
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 985:Src text UUid:4be6f4c5-da5b-4d56-a728-12d364ebbbc2
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 986:Dst text UUid:f8f3ae0e-94a9-469d-ac2e-b8627abbf691
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 328:Removing tracks and zones, after footprint placement
+05-26 20:25:55 root 340:updating GUI message: 'Removing zones and tracks'
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1277:Remove bounding box top:129575000, bottom:136700000, Left:97545000, Right:105455000
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1277:Remove bounding box top:130975000, bottom:138100000, Left:128607500, Right:136517500
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1277:Remove bounding box top:133800000, bottom:140925000, Left:113982500, Right:121892500
+05-26 20:25:55 root 340:updating GUI message: 'Replicating tracks'
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1009:Replicating tracks
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1015:Replicating tracks on sheet ['register_1_1', 'gate_nor_2_2']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 792:Net pairs for sheet ['register_1_1', 'gate_nor_2_2'] :[('VDD', 'VDD'), ('/register_1_1/Q', '/register_1_1/#Q'), ('GND', 'GND'), ('Net-(Q11-S)', 'Net-(Q13-S)'), ('/register_1_1/gate_nor_2_1/A', '/register_1_1/Q'), ('/register_1_1/#Q', '/register_1_1/gate_nor_2_2/B')]
+05-26 20:25:55 root 345:updating GUI with: 1
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1015:Replicating tracks on sheet ['register_1_1', 'gate_nor_2_3']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 776:Significant difference between src net: ['', 'register_1_1', '#Q'] and dst net: ['', 'register_1_1', '#READ'], with src_net_depth=3, dst_net_depth=3, src_fp_depth=2, dst_fp_depth=2, match level 0.76
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 776:Significant difference between src net: ['', 'register_1_1', '#Q'] and dst net: ['', 'register_1_1', '#READ'], with src_net_depth=3, dst_net_depth=3, src_fp_depth=2, dst_fp_depth=2, match level 0.76
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 792:Net pairs for sheet ['register_1_1', 'gate_nor_2_3'] :[('/register_1_1/gate_nor_2_1/A', '/register_1_1/gate_inv_1_1/INV'), ('VDD', 'VDD'), ('/register_1_1/#Q', '/register_1_1/#READ'), ('GND', 'GND'), ('Net-(Q11-S)', 'Net-(Q17-D)'), ('/register_1_1/Q', '/register_1_1/gate_nor_2_2/B')]
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1015:Replicating tracks on sheet ['register_1_1', 'gate_nor_2_4']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 776:Significant difference between src net: ['', 'register_1_1', '#Q'] and dst net: ['', 'register_1_1', '#READ'], with src_net_depth=3, dst_net_depth=3, src_fp_depth=2, dst_fp_depth=2, match level 0.76
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 776:Significant difference between src net: ['', 'register_1_1', '#Q'] and dst net: ['', 'register_1_1', '#READ'], with src_net_depth=3, dst_net_depth=3, src_fp_depth=2, dst_fp_depth=2, match level 0.76
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 792:Net pairs for sheet ['register_1_1', 'gate_nor_2_4'] :[('/register_1_1/Q', '/register_1_1/gate_nor_2_1/A'), ('Net-(Q11-S)', 'Net-(Q18-D)'), ('VDD', 'VDD'), ('/register_1_1/#Q', '/register_1_1/#READ'), ('GND', 'GND'), ('/register_1_1/gate_nor_2_1/A', '/register_1_1/D')]
+05-26 20:25:55 root 340:updating GUI message: 'Replicating zones'
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1079:Replicating zones
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1086:Replicating zones on sheet ['register_1_1', 'gate_nor_2_2']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 792:Net pairs for sheet ['register_1_1', 'gate_nor_2_2'] :[('VDD', 'VDD'), ('/register_1_1/Q', '/register_1_1/#Q'), ('GND', 'GND'), ('Net-(Q11-S)', 'Net-(Q13-S)'), ('/register_1_1/gate_nor_2_1/A', '/register_1_1/Q'), ('/register_1_1/#Q', '/register_1_1/gate_nor_2_2/B')]
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1086:Replicating zones on sheet ['register_1_1', 'gate_nor_2_3']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 776:Significant difference between src net: ['', 'register_1_1', '#Q'] and dst net: ['', 'register_1_1', '#READ'], with src_net_depth=3, dst_net_depth=3, src_fp_depth=2, dst_fp_depth=2, match level 0.76
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 776:Significant difference between src net: ['', 'register_1_1', '#Q'] and dst net: ['', 'register_1_1', '#READ'], with src_net_depth=3, dst_net_depth=3, src_fp_depth=2, dst_fp_depth=2, match level 0.76
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 792:Net pairs for sheet ['register_1_1', 'gate_nor_2_3'] :[('/register_1_1/gate_nor_2_1/A', '/register_1_1/gate_inv_1_1/INV'), ('VDD', 'VDD'), ('/register_1_1/#Q', '/register_1_1/#READ'), ('GND', 'GND'), ('Net-(Q11-S)', 'Net-(Q17-D)'), ('/register_1_1/Q', '/register_1_1/gate_nor_2_2/B')]
+05-26 20:25:55 root 345:updating GUI with: 66
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1086:Replicating zones on sheet ['register_1_1', 'gate_nor_2_4']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 776:Significant difference between src net: ['', 'register_1_1', '#Q'] and dst net: ['', 'register_1_1', '#READ'], with src_net_depth=3, dst_net_depth=3, src_fp_depth=2, dst_fp_depth=2, match level 0.76
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 776:Significant difference between src net: ['', 'register_1_1', '#Q'] and dst net: ['', 'register_1_1', '#READ'], with src_net_depth=3, dst_net_depth=3, src_fp_depth=2, dst_fp_depth=2, match level 0.76
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 792:Net pairs for sheet ['register_1_1', 'gate_nor_2_4'] :[('/register_1_1/Q', '/register_1_1/gate_nor_2_1/A'), ('Net-(Q11-S)', 'Net-(Q18-D)'), ('VDD', 'VDD'), ('/register_1_1/#Q', '/register_1_1/#READ'), ('GND', 'GND'), ('/register_1_1/gate_nor_2_1/A', '/register_1_1/D')]
+05-26 20:25:55 root 340:updating GUI message: 'Replicating text'
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1168:Replicating text
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1175:Replicating text on sheet ['register_1_1', 'gate_nor_2_2']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1175:Replicating text on sheet ['register_1_1', 'gate_nor_2_3']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1175:Replicating text on sheet ['register_1_1', 'gate_nor_2_4']
+05-26 20:25:55 root 340:updating GUI message: 'Replicating drawings'
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1219:Replicating drawings
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1225:Replicating drawings on sheet ['register_1_1', 'gate_nor_2_2']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1225:Replicating drawings on sheet ['register_1_1', 'gate_nor_2_3']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.replicate_layout 1225:Replicating drawings on sheet ['register_1_1', 'gate_nor_2_4']
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 264:Replication complete
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 267:Letting the user know there are some issues with replicated design
+05-26 20:25:55 com_github_MitjaNemec_ReplicateLayout.action_replicate_layout 271:Looks like the design has an exotic connectivity that the plugin might not handle properly
+ Make sure that you check the connectivity around:
+Footprint Q22, pad 1
+Footprint Q5, pad 1
+Footprint Q9, pad 1
+Footprint Q21, pad 1
+

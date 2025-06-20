@@ -1,5 +1,8 @@
 tests = [
     'x + 3 * (*y) / 6',
+    'x + 3 * *y / 6',
+    'x + 3 * (*y + (2 * z)) / 6',
+    'x + (3 * ((*y) + (2 * z)) / 6)',
 ]
 
 tests_tok = []
@@ -59,3 +62,35 @@ def parse(tokens):
 
 for t_i in range(len(tests)):
     print(tests[t_i], '  -->  ', parse(tests_tok[t_i]))
+
+def expression_to_instructions(exp):
+    if type(exp) == type([]):
+        ins = []
+        if len(exp) == 1:
+            return expression_to_instructions(exp[0])
+        elif len(exp) == 2:
+            operator = exp[0]
+            op = exp[1]
+            ins.extend(expression_to_instructions(op))
+            ins.append('pop a')
+            ins.append(f'push op [{operator} a]')
+            return ins
+        elif len(exp) == 3:
+            op_l = exp[0]
+            operator = exp[1]
+            op_r = exp[2]
+            for e in [op_l, op_r]:
+                ins.extend(expression_to_instructions(e))
+            ins.append('pop b')
+            ins.append('pop a')
+            ins.append(f'push op [a {operator} b]')
+            return ins
+        else:
+            print('unexpected length', len(exp))
+            return []
+    else:
+        return [f'push {exp}']
+
+for t_i in range(len(tests)):
+    print(tests[t_i], ':', sep='')
+    print('\n'.join(expression_to_instructions(parse(tests_tok[t_i]))))

@@ -9,19 +9,46 @@ typedef struct inter_context {
     int i;
 } inter_context_t;
 
+typedef enum inter_ins_type {
+    INTER_INS_DECLARATION,
+    INTER_INS_ASSIGNMENT,
+    INTER_INS_JUMP,
+} inter_ins_type_t;
+
+typedef struct inter_ins_declaration {
+    char *name;
+    uint8_t bits;
+} inter_ins_declaration_t;
+
+typedef enum inter_ins_assignment_source {
+    INTER_INS_ASSIGNMENT_SOURCE_VARIABLE,
+    INTER_INS_ASSIGNMENT_SOURCE_INDIRECT,
+    INTER_INS_ASSIGNMENT_SOURCE_ADDRESSOF,
+    INTER_INS_ASSIGNMENT_SOURCE_INDEXED,
+} inter_ins_assignment_source_t;
+
+typedef struct inter_ins_assignment {
+    char *to;
+    inter_ins_assignment_source_t assignment_source;
+    char *from;
+    int32_t index;
+} inter_ins_assignment_t;
+
+typedef struct inter_ins_jump {
+    char *to;
+    bool subroutine;
+} inter_ins_jump_t;
+
+// TODO: maybe increment variable suffix if re-declared (possibly useful for temp variables from different parser functions)
+
 typedef struct inter_ins {
-    /*
-    TODO: abstract instructions:
-    - get/set variables by name (even temporary values, maybe just number them in order), do not care where they are stored
-    - declare variable type just before first usage (8, 16, 32, 64)
-    - pointers/structs/arrays are arithmetic operations
-        - return structs always as pointer -> if not a c-pointer, read values from returned pointer into new variable
-    - functions are denoted by labels
-    - access to pointer with offset (array, struct, multi-word)
-    */
-    int i;
+   inter_ins_type_t type;
+   inter_ins_declaration_t *ins_declaration;
+   inter_ins_assignment_source_t *ins_assignment;
+   inter_ins_jump_t *ins_jump;
 } inter_ins_t;
 
+/*
 // returns false on error
 bool cmp_inter_generate_context_from_ast(ast_element_t *ast, inter_context_t *context) {
     return true;
@@ -39,6 +66,7 @@ bool cmp_inter_generate_context_from_file(const char *f_path, inter_context_t *c
     cmp_inter_generate_context_from_ast(&ast, context);
     return true;
 }
+*/
 
 // returns false on error
 bool cmp_inter_generate_from_context(inter_context_t *context, const char *func, inter_ins_t **inter_ins, uint32_t *inter_ins_count) {

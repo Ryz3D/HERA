@@ -1,0 +1,676 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "c11998e7-30c0-4418-9584-a7ac5990cb82")
+	(paper "A4")
+	(lib_symbols)
+	(junction
+		(at 132.08 106.68)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "330bff06-b536-49f1-b4af-4b4222207be0")
+	)
+	(junction
+		(at 114.3 88.9)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "71338495-1e91-4e5f-a17d-77dc5c8beadf")
+	)
+	(junction
+		(at 166.37 91.44)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "c2c4b328-5a51-4df5-93f7-b0c507f2a0da")
+	)
+	(junction
+		(at 165.1 104.14)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "fac77745-6935-43d1-8482-c4b1bff30610")
+	)
+	(wire
+		(pts
+			(xy 132.08 91.44) (xy 134.62 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "11e328da-d44a-4cb3-ac3c-b4cdeffbbd10")
+	)
+	(wire
+		(pts
+			(xy 132.08 109.22) (xy 132.08 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2f750702-6130-4a48-92f1-0f119d74af08")
+	)
+	(wire
+		(pts
+			(xy 149.86 102.87) (xy 149.86 99.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "30cab01d-482e-4b28-877d-c5008fe37e67")
+	)
+	(wire
+		(pts
+			(xy 166.37 91.44) (xy 168.91 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "489a324c-fd48-4dc3-b61f-b12688e134be")
+	)
+	(wire
+		(pts
+			(xy 134.62 106.68) (xy 132.08 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7a637a75-cd97-4d23-a0a8-0756a52ee832")
+	)
+	(wire
+		(pts
+			(xy 165.1 97.79) (xy 165.1 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7bc76b4a-a2fc-49e5-ac8c-ed9a4c0d1d33")
+	)
+	(wire
+		(pts
+			(xy 132.08 106.68) (xy 132.08 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "914136a7-7db1-4eec-a816-69bbc7c581bb")
+	)
+	(wire
+		(pts
+			(xy 147.32 105.41) (xy 151.13 105.41)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9a5e9395-02ef-49b5-b083-e13a1f7cfddb")
+	)
+	(wire
+		(pts
+			(xy 151.13 102.87) (xy 149.86 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a599dddf-4879-4173-bf8f-4078ec072ce8")
+	)
+	(wire
+		(pts
+			(xy 163.83 104.14) (xy 165.1 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "aac341f2-34a0-4f95-98e0-911916c99876")
+	)
+	(wire
+		(pts
+			(xy 113.03 88.9) (xy 114.3 88.9)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b5e35f88-d418-49b2-af92-397f04e161df")
+	)
+	(wire
+		(pts
+			(xy 114.3 88.9) (xy 134.62 88.9)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b9aefe2c-7bdb-445d-9550-319af2617ff0")
+	)
+	(wire
+		(pts
+			(xy 149.86 92.71) (xy 149.86 97.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c204f5ec-1ccb-4b23-bb27-f6859ce1eb25")
+	)
+	(wire
+		(pts
+			(xy 151.13 92.71) (xy 149.86 92.71)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c753ef9a-dde2-49a8-948d-6b89d51645c1")
+	)
+	(wire
+		(pts
+			(xy 114.3 104.14) (xy 114.3 88.9)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d523e771-e33f-4115-8d4f-049cf1621f04")
+	)
+	(wire
+		(pts
+			(xy 129.54 104.14) (xy 134.62 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e1e9356c-ff31-4b23-a583-313290ba6283")
+	)
+	(wire
+		(pts
+			(xy 166.37 91.44) (xy 163.83 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e40eed08-d2f4-4c48-9e6e-194b78524d8b")
+	)
+	(wire
+		(pts
+			(xy 147.32 90.17) (xy 151.13 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "eaee4379-4297-4519-a7dc-0aacd0e0f824")
+	)
+	(wire
+		(pts
+			(xy 149.86 97.79) (xy 165.1 97.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ebe2be92-48c8-471d-a29d-552e6733ebb6")
+	)
+	(wire
+		(pts
+			(xy 165.1 104.14) (xy 168.91 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "efcf2ef6-466b-4e07-ac69-4335ee3754b5")
+	)
+	(wire
+		(pts
+			(xy 166.37 99.06) (xy 166.37 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fbd26881-6988-4f66-8aa1-4f030caffaf0")
+	)
+	(wire
+		(pts
+			(xy 149.86 99.06) (xy 166.37 99.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fed9d3f1-c763-44a3-9460-f77f5a2c9c71")
+	)
+	(wire
+		(pts
+			(xy 116.84 104.14) (xy 114.3 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ff0639cd-eabd-4238-83fa-08af90f7a9a7")
+	)
+	(wire
+		(pts
+			(xy 113.03 109.22) (xy 132.08 109.22)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ff499e04-09f1-4c9d-a267-638f9fcfcc6c")
+	)
+	(hierarchical_label "Q"
+		(shape input)
+		(at 168.91 91.44 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "6c612e9d-6b04-4116-bc3c-ae59a162f45f")
+	)
+	(hierarchical_label "#READ"
+		(shape input)
+		(at 113.03 109.22 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "88f02da6-3a9d-4880-aaef-b971576689cc")
+	)
+	(hierarchical_label "#Q"
+		(shape input)
+		(at 168.91 104.14 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "c7c8f299-cd87-469b-801c-ac89062b0501")
+	)
+	(hierarchical_label "D"
+		(shape input)
+		(at 113.03 88.9 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "cd121587-d20a-4178-a2e2-b3b85103f614")
+	)
+	(sheet
+		(at 151.13 101.6)
+		(size 12.7 5.08)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "0879015c-6cfa-4c2d-b32b-60c51c5768bd")
+		(property "Sheetname" "gate_nor_2_2"
+			(at 151.13 100.8884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "gate_nor_2.kicad_sch"
+			(at 151.13 107.2646 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "NOR" input
+			(at 163.83 104.14 0)
+			(uuid "bed70d42-4c13-43cc-8090-c04c7c3c9d9f")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "B" input
+			(at 151.13 105.41 180)
+			(uuid "488d56c4-93a5-4842-b2d0-8c2370747740")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "A" input
+			(at 151.13 102.87 180)
+			(uuid "3d9688f4-9ce0-4ce5-b027-f82a8de6d576")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f/a3afc4bd-8112-4457-b62c-0f26b96a56bd"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 134.62 87.63)
+		(size 12.7 5.08)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "57df2359-350f-4826-803a-0b33840bfd98")
+		(property "Sheetname" "gate_nor_2_4"
+			(at 134.62 86.9184 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "gate_nor_2.kicad_sch"
+			(at 134.62 93.2946 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "NOR" input
+			(at 147.32 90.17 0)
+			(uuid "6e63fabf-2144-4275-957f-588e9df3fba5")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "B" input
+			(at 134.62 91.44 180)
+			(uuid "7df861c3-ee04-436a-b7da-a7383df0dc8b")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "A" input
+			(at 134.62 88.9 180)
+			(uuid "3c6f3f8f-3aee-4f2f-b40f-921d0e2e6f8d")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f/a3afc4bd-8112-4457-b62c-0f26b96a56bd"
+					(page "7")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 116.84 101.6)
+		(size 12.7 5.08)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "64336e71-1f04-42fc-a75c-97333186a5bf")
+		(property "Sheetname" "gate_inv_1_1"
+			(at 116.84 100.8884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "gate_inv_1.kicad_sch"
+			(at 116.84 107.2646 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "A" input
+			(at 116.84 104.14 180)
+			(uuid "2c89398e-b63e-45cd-9ce0-775e56aa73e3")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "INV" input
+			(at 129.54 104.14 0)
+			(uuid "0be9ce44-64b0-4512-ab14-1e067f2c12c2")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f/a3afc4bd-8112-4457-b62c-0f26b96a56bd"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 134.62 102.87)
+		(size 12.7 5.08)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "b895246e-7101-4e5f-828d-a43d979e3395")
+		(property "Sheetname" "gate_nor_2_3"
+			(at 134.62 102.1584 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "gate_nor_2.kicad_sch"
+			(at 134.62 108.5346 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "NOR" input
+			(at 147.32 105.41 0)
+			(uuid "715155c8-8594-4349-9cd2-54bcb139869b")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "B" input
+			(at 134.62 106.68 180)
+			(uuid "d6071d49-5610-4dc5-9e4d-592f2d7a5eb2")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "A" input
+			(at 134.62 104.14 180)
+			(uuid "456b9f96-3909-498f-8eaf-b75f39ad2129")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f/a3afc4bd-8112-4457-b62c-0f26b96a56bd"
+					(page "6")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 151.13 88.9)
+		(size 12.7 5.08)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "e474c6a8-1ab4-4212-8525-452c9bceb572")
+		(property "Sheetname" "gate_nor_2_1"
+			(at 151.13 88.1884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "gate_nor_2.kicad_sch"
+			(at 151.13 94.5646 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(pin "NOR" input
+			(at 163.83 91.44 0)
+			(uuid "5602c466-6ce6-447a-ba22-36b01cda3bcc")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "B" input
+			(at 151.13 92.71 180)
+			(uuid "4964893a-a2c5-4475-bbf2-af2b3ce24f79")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "A" input
+			(at 151.13 90.17 180)
+			(uuid "5a35b80c-cdb1-4929-8808-9ca8c6e9b631")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(instances
+			(project "hera"
+				(path "/6868e9eb-d1d4-45cb-8fc8-14949ab4307f/a3afc4bd-8112-4457-b62c-0f26b96a56bd"
+					(page "4")
+				)
+			)
+		)
+	)
+)
