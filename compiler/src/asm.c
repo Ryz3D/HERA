@@ -46,8 +46,6 @@ typedef struct asm_instruction {
     char *label;
 } asm_instruction_t;
 
-// TODO: 
-
 // returns false on error
 bool cmp_asm_generate(inter_ins_t *inter_ins, uint32_t inter_ins_count, asm_instruction_t **asm_ins, uint32_t *asm_ins_count) {
     *asm_ins = malloc(1 * sizeof(asm_instruction_t));
@@ -68,6 +66,8 @@ bool cmp_asm_generate(inter_ins_t *inter_ins, uint32_t inter_ins_count, asm_inst
 
 bool cmp_asm_assemble(asm_instruction_t *asm_ins, uint32_t asm_ins_count, uint8_t **bin_data, uint32_t *bin_data_size) {
     *bin_data = NULL;
+
+    *bin_data = 1;
 
     if (*bin_data == NULL) {
         return false;

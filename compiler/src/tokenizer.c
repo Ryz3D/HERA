@@ -65,6 +65,33 @@ typedef enum token_type {
     TOKEN_UNKNOWN,
 } token_type_t;
 
+typedef struct tokenizer_pos {
+    fpos_t f;
+    uint32_t i;
+} tokenizer_pos_t;
+
+typedef struct token {
+    token_type_t type;
+    bool allocated;
+    char *str;
+    const char *f_path;
+    uint32_t line, col;
+} token_t;
+
+typedef struct tokenizer_state {
+    const char *f_path;
+    FILE *f_src;
+    token_t **tokens;
+    uint32_t *tokens_count;
+    bool ended;
+    tokenizer_pos_t pos;
+    tokenizer_pos_t last_linebreak_pos;
+    uint32_t current_line;
+} tokenizer_state_t;
+
+#define TOKEN_POS_FORMAT "\e[1;36m%s:%u:%u:\e[m "
+#define TOKEN_POS_FORMAT_VALUES(t) (t).f_path, (t).line, (t).col
+
 int8_t cmp_tokenizer_precedence_prefix_un_operator(token_type_t t) {
     switch (t) {
         case TOKEN_DOUBLE_PLUS:
@@ -107,10 +134,10 @@ int8_t cmp_tokenizer_precedence_bi_operator(token_type_t t) {
         case TOKEN_DOUBLE_LEFT:
         case TOKEN_DOUBLE_RIGHT:
             return 5;
-        case TOKEN_LESS_EQ:
-        case TOKEN_GREATER_EQ:
         case TOKEN_LESS:
+        case TOKEN_LESS_EQ:
         case TOKEN_GREATER:
+        case TOKEN_GREATER_EQ:
             return 6;
         case TOKEN_EQUAL:
         case TOKEN_UNEQUAL:
@@ -196,33 +223,6 @@ const char *token_str[] = {
     "}",
     "\n",
 };
-
-typedef struct tokenizer_pos {
-    fpos_t f;
-    uint32_t i;
-} tokenizer_pos_t;
-
-typedef struct token {
-    token_type_t type;
-    bool allocated;
-    char *str;
-    const char *f_path;
-    uint32_t line, col;
-} token_t;
-
-typedef struct tokenizer_state {
-    const char *f_path;
-    FILE *f_src;
-    token_t **tokens;
-    uint32_t *tokens_count;
-    bool ended;
-    tokenizer_pos_t pos;
-    tokenizer_pos_t last_linebreak_pos;
-    uint32_t current_line;
-} tokenizer_state_t;
-
-#define TOKEN_POS_FORMAT "\e[1;36m%s:%u:%u:\e[m "
-#define TOKEN_POS_FORMAT_VALUES(t) (t).f_path, (t).line, (t).col
 
 void cmp_tokenizer_set_pos(tokenizer_state_t *state, tokenizer_pos_t pos) {
     fsetpos(state->f_src, &pos.f);
@@ -858,7 +858,7 @@ bool cmp_tokenizer_run(const char *f_path, token_t **tokens, uint32_t *tokens_co
     if (deleted_tokens > 0) {
         *tokens = realloc(*tokens, (*tokens_count) * sizeof(token_t));
         if (*tokens == NULL) {
-            printf(ERROR "tokenizer out of memory" ENDL);
+            printf(ERROR "out of memory" ENDL);
             return false;
         }
     }

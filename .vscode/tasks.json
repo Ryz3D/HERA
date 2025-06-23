@@ -29,7 +29,7 @@
                 "-fdiagnostics-color=always",
                 "-Wall",
                 "-g",
-                "main.c",
+                "src/main.c",
                 "-o",
                 "${workspaceFolder}\\compiler.exe"
             ],

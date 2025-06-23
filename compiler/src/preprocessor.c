@@ -1,8 +1,6 @@
 #ifndef INC_PREPROCESSOR_C
 #define INC_PREPROCESSOR_C
 
-#pragma once
-
 #include "includes.h"
 
 // returns false on error
