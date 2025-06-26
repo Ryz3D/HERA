@@ -64,7 +64,15 @@ typedef struct inter_ins_pop {
     char *to;
 } inter_ins_pop_t;
 
+typedef enum inter_ins_jump_condition {
+    INTER_INS_JUMP_CONDITION_NONE,
+    INTER_INS_JUMP_CONDITION_CARRY,
+    INTER_INS_JUMP_CONDITION_ZERO,
+    INTER_INS_JUMP_CONDITION_NEGATIVE,
+} inter_ins_jump_condition_t;
+
 typedef struct inter_ins_jump {
+    inter_ins_jump_condition_t jump_condition;
     char *to;
     bool subroutine;
 } inter_ins_jump_t;
@@ -122,8 +130,9 @@ typedef struct inter_ins_stack_operation {
 } inter_ins_stack_operation_t;
 
 typedef struct inter_ins {
-   inter_ins_type_t type;
-   void *ins;
+    char *label;
+    inter_ins_type_t type;
+    void *ins;
 } inter_ins_t;
 
 // ACTUAL PARSER.H STARTS HERE
@@ -695,8 +704,19 @@ bool cmp_parser_parse_declaration(parser_state_t *state) {
     return false;
 }
 
+inter_ins_t test_ins[] = {
+    { .label = "main", .type = INTER_INS_DECLARATION,        .ins = &(inter_ins_declaration_t){ .type = PARSER_TYPE_UINT16, .name = "x", .fixed = false } },
+    { .label = NULL,   .type = INTER_INS_ASSIGNMENT,         .ins = &(inter_ins_assignment_t){ .to = "x", .from_constant = 0xfe08, .assignment_source = INTER_INS_ASSIGNMENT_SOURCE_CONSTANT } },
+    { .label = NULL,   .type = INTER_INS_PUSH,               .ins = &(inter_ins_push_t){ .from = "x" } },
+    { .label = NULL,   .type = INTER_INS_DECLARATION,        .ins = &(inter_ins_declaration_t){ .type = PARSER_TYPE_UINT16, .name = "y", .fixed = false } },
+    { .label = NULL,   .type = INTER_INS_ASSIGNMENT,         .ins = &(inter_ins_assignment_t){ .to = "y", .from_constant = 0xffff, .assignment_source = INTER_INS_ASSIGNMENT_SOURCE_CONSTANT } },
+    { .label = NULL,   .type = INTER_INS_PUSH,               .ins = &(inter_ins_push_t){ .from = "y" } },
+    { .label = NULL,   .type = INTER_INS_DECLARATION,        .ins = &(inter_ins_declaration_t){ .type = PARSER_TYPE_UINT16, .name = "GPOA", .fixed = true, .fixed_address = 0x0200 } },
+    { .label = NULL,   .type = INTER_INS_STACK_OPERATION,    .ins = &(inter_ins_stack_operation_t){ .op2 = true, .op = INTER_OPERATOR_BI_ADD, .to = "GPOA", .type_a = PARSER_TYPE_UINT16, .type_b = PARSER_TYPE_UINT16 } }
+};
+
 // returns false on error
-bool cmp_parser_run(const char *f_path, inter_ins_t **ins) {
+bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) {
     token_t *tokens1 = NULL;
     uint32_t tokens1_count = 0;
 
@@ -728,13 +748,17 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins) {
             continue;
         } else {
             printf(TOKEN_POS_FORMAT ERROR "unexpected token. expected top-level declaration" ENDL, TOKEN_POS_FORMAT_VALUES(state.tokens[state.i]));
-            return false;
+            break; // return false;
         }
     }
 
-    *ins = state.ins;
-
     cmp_tokenizer_free(tokens2, tokens2_count);
+
+    *ins = state.ins;
+    *ins_count = state.ins_count;
+
+    *ins = test_ins;
+    *ins_count = 8;
 
     return true;
 }
@@ -870,6 +894,9 @@ void cmp_inter_debug_print_bi_operator(inter_operator_t op) {
 
 void cmp_inter_debug_print(inter_ins_t *ins, uint32_t ins_count) {
     for (uint32_t i = 0; i < ins_count; i++) {
+        if (ins[i].label != NULL) {
+            printf("%s:" ENDL, ins[i].label);
+        }
         printf("\t");
         switch (ins[i].type) {
             case INTER_INS_DECLARATION: {
@@ -1015,7 +1042,6 @@ bool cmp_inter_generate(const char *f_path, inter_ins_t **inter_ins, uint32_t *i
     // TODO: all functions at corresponding labels (temporary inter_ins_t[], then copy to big one including labels)
     cmp_inter_generate_from_context(&ctx, "main", inter_ins, inter_ins_count);
     // TODO: add code at 0x0000 to jump to label main
-    // TODO: expression steps to ordered instructions (resolve pointers, do arithmetics)
 
     return true;
 }
