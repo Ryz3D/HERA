@@ -1,6 +1,8 @@
 #include <malloc.h>
 #include <stdint.h>
 
+volatile unsigned int *i = 12;
+
 void output(uint16_t data) {
     // TODO: *GPOA
 }

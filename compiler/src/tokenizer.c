@@ -722,9 +722,6 @@ bool cmp_tokenizer_read_token(tokenizer_state_t *state) {
         return false;
     }
 
-    cmp_tokenizer_push_token(state, (token_t){
-        .type = TOKEN_EOF,
-    });
     return true;
 }
 
@@ -761,6 +758,9 @@ bool cmp_tokenizer_run(const char *f_path, token_t **tokens, uint32_t *tokens_co
             return false;
         }
     }
+    cmp_tokenizer_push_token(&state, (token_t){
+        .type = TOKEN_EOF,
+    });
 
     fclose(f);
 
