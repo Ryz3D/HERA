@@ -365,6 +365,7 @@ bool cmp_parser_push_value(parser_state_t *state) {
         // TODO: cmp_parser_add_ins(state, );
         // TODO: intermediate instruction types for math/bit operation (maybe only variable-variable, constant will be loaded into register or ram)
         //         -> this might replace unary operators in assignment ins
+        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = t->str }, sizeof(inter_ins_push_t));
     } else if (t->type == TOKEN_KEYWORD) {
         // TODO: variable or function call?
         cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = t->str }, sizeof(inter_ins_push_t));
@@ -375,7 +376,79 @@ bool cmp_parser_push_value(parser_state_t *state) {
 
 // returns false if not an expression
 bool cmp_parser_parse_expression(parser_state_t *state) {
-    // TODO: implement this (maybe very simple at first -> constant/variable/variable+constant) and have it increment state->i
+    uint32_t i_start = state->i;
+
+    // TEMP: support prefix unary operator
+    if (cmp_tokenizer_precedence_prefix_un_operator(cmp_parser_get_token(state, 0)->type) != 0) {
+        token_t *t_operator = cmp_parser_get_token(state, 0);
+        state->i++;
+        token_t *t_operand = cmp_parser_get_token(state, 0);
+        state->i++;
+
+        // TEMP: TODO: parser_add_ins
+
+        return true;
+    }
+
+    // TEMP: or support chain of binary operators from right to left
+    uint32_t bracket_level = 0;
+    for (; cmp_parser_get_token(state, 0)->type != TOKEN_EOF; state->i++) {
+        bool end = false;
+        switch (cmp_parser_get_token(state, 0)->type) {
+            case TOKEN_BRACKET_R_L:
+                bracket_level++;
+                break;
+            case TOKEN_BRACKET_R_R:
+                end = bracket_level == 0;
+                bracket_level--;
+                break;
+            case TOKEN_BRACKET_S_L:
+                bracket_level++;
+                break;
+            case TOKEN_BRACKET_S_R:
+                end = bracket_level == 0;
+                bracket_level--;
+                break;
+            case TOKEN_BRACKET_C_L:
+                bracket_level++;
+                break;
+            case TOKEN_BRACKET_C_R:
+                end = bracket_level == 0;
+                bracket_level--;
+                break;
+            case TOKEN_SEMICOLON:
+                end = true;
+                break;
+            case TOKEN_COMMA:
+                end = true;
+                break;
+            default:
+                break;
+        }
+        if (end) {
+            break;
+        }
+    }
+    if (cmp_parser_get_token(state, 0)->type == TOKEN_EOF) {
+        state->i = i_start;
+        return false;
+    }
+    state->i--;
+    if (!cmp_parser_push_value(state)) {
+        state->i = i_start;
+        return false;
+    }
+    state->i--;
+    for (uint32_t i = state->i; i > i_start; i -= 2) {
+        token_t *t_operator = &state->tokens[i];
+        state->i++;
+        token_t *t_operand = &state->tokens[i - 1];
+        state->i++;
+
+        // right operand is pushed
+        // TEMP: TODO: parser_add_ins
+    }
+    return true;
 
     /*
     TODO: function calls -> push parameters, subroutine jump, (push return value). make sure to pop all parameters and return value (or don't even push if not used)
@@ -390,6 +463,7 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
     }
 
     if (!cmp_parser_push_value(state)) {
+        state->i = i_start;
         return false;
     }
 
@@ -400,6 +474,7 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
         // prefix
         char *var_temp = cmp_parser_new_temp(state, PARSER_VAR_NAME_STACK_OP_UN_PREFIX_TEMP);
         if (var_temp == NULL) {
+            state->i = i_start;
             return false;
         }
         inter_operator_t inter_op;
@@ -449,6 +524,7 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
         // suffix
         char *var_temp = cmp_parser_new_temp(state, PARSER_VAR_NAME_STACK_OP_UN_SUFFIX_TEMP);
         if (var_temp == NULL) {
+            state->i = i_start;
             return false;
         }
         inter_operator_t inter_op;
@@ -478,15 +554,18 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
         return true;
     } else if (cmp_tokenizer_precedence_bi_operator(op->type) == 0) {
         // expected binary op
+        state->i = i_start;
         return false;
     }
 
     if (!cmp_parser_push_value(state)) {
+        state->i = i_start;
         return false;
     }
 
     char *var_temp = cmp_parser_new_temp(state, PARSER_VAR_NAME_STACK_OP_TEMP);
     if (var_temp == NULL) {
+        state->i = i_start;
         return false;
     }
     inter_operator_t inter_op;
@@ -1035,6 +1114,9 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected condition expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                    return false;
+                }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
                     printf(TOKEN_POS_FORMAT ERROR "expected closing bracket" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
@@ -1065,6 +1147,9 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                 }
                 if (!cmp_parser_parse_expression(&state)) {
                     printf(TOKEN_POS_FORMAT ERROR "expected condition expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                    return false;
+                }
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
                     return false;
                 }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
@@ -1116,6 +1201,9 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected condition expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                    return false;
+                }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
                     printf(TOKEN_POS_FORMAT ERROR "expected closing bracket" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
@@ -1140,6 +1228,9 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected init expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                    return false;
+                }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
                     printf(TOKEN_POS_FORMAT ERROR "expected semicolon" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
@@ -1149,6 +1240,9 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected condition expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                    return false;
+                }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
                     printf(TOKEN_POS_FORMAT ERROR "expected semicolon" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
@@ -1156,6 +1250,9 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                 state.i++;
                 if (!cmp_parser_parse_expression(&state)) {
                     printf(TOKEN_POS_FORMAT ERROR "expected loop expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                    return false;
+                }
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
                     return false;
                 }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
@@ -1191,6 +1288,9 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected value expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                    return false;
+                }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
                     printf(TOKEN_POS_FORMAT ERROR "expected closing bracket" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
@@ -1221,7 +1321,11 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
             }
         }
         if (state.allow_expression) {
-            cmp_parser_parse_expression(&state);
+            if (cmp_parser_parse_expression(&state)) {
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = "temp_expression" }, sizeof(inter_ins_pop_t))) {
+                    return false;
+                }
+            }
         }
         // TODO: all directives should be resolved in preprocessor i think
         if (cmp_parser_get_token(&state, 0)->type == TOKEN_DIRECTIVE) {
