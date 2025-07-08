@@ -144,6 +144,7 @@ typedef struct inter_ins {
 #define PARSER_VAR_NAME_STACK_OP_UN_SUFFIX_TEMP (PARSER_VAR_NAME_PREFIX "stack_op_temp")
 
 typedef struct parser_state {
+    bool error;
     inter_ins_t *ins;
     uint32_t ins_count;
     token_t *tokens;
@@ -203,6 +204,7 @@ bool cmp_parser_add_ins(parser_state_t *state, char *label, inter_ins_type_t typ
     state->ins = realloc(state->ins, state->ins_count * sizeof(inter_ins_t));
     if (state->ins == NULL) {
         printf(ERROR "out of memory");
+        state->error = true;
         return false;
     }
     state->ins[state->ins_count - 1].label = label;
@@ -210,6 +212,7 @@ bool cmp_parser_add_ins(parser_state_t *state, char *label, inter_ins_type_t typ
     state->ins[state->ins_count - 1].ins = malloc(ins_size);
     if (state->ins[state->ins_count - 1].ins == NULL) {
         printf(ERROR "out of memory");
+        state->error = true;
         return false;
     }
     memcpy(state->ins[state->ins_count - 1].ins, ins, ins_size);
@@ -220,6 +223,7 @@ char *cmp_parser_new_temp(parser_state_t *state, const char *prefix) {
     char *prefix_num_buf = malloc(strlen(prefix + 9));
     if (prefix_num_buf == NULL) {
         printf(ERROR "out of memory");
+        state->error = true;
         return NULL;
     }
     for (uint32_t num = 0; num < 10000000; num++) {
@@ -362,16 +366,17 @@ bool cmp_parser_push_value(parser_state_t *state) {
     token_t *t = cmp_parser_get_token(state, 0);
     cmp_parser_value_t constant_value = cmp_parser_get_value(t);
     if (constant_value.valid) {
-        // TODO: cmp_parser_add_ins(state, );
-        // TODO: intermediate instruction types for math/bit operation (maybe only variable-variable, constant will be loaded into register or ram)
-        //         -> this might replace unary operators in assignment ins
-        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = t->str }, sizeof(inter_ins_push_t));
+        cmp_parser_add_ins(state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){ .name = "temp_const", .type = constant_value.type.pure_type }, sizeof(inter_ins_push_t));
+        cmp_parser_add_ins(state, NULL, INTER_INS_ASSIGNMENT, &(inter_ins_assignment_t){ .to = "temp_const", .from_constant = constant_value.i, .assignment_source = INTER_INS_ASSIGNMENT_SOURCE_CONSTANT }, sizeof(inter_ins_assignment_t));
+        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = "temp_const" }, sizeof(inter_ins_push_t));
+        return true;
     } else if (t->type == TOKEN_KEYWORD) {
         // TODO: variable or function call?
         cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = t->str }, sizeof(inter_ins_push_t));
-        // remember: you generate intermediate code, you can simply use the variable name
+        return true;
+    } else {
+        return false;
     }
-    return false;
 }
 
 // returns false if not an expression
@@ -382,10 +387,44 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
     if (cmp_tokenizer_precedence_prefix_un_operator(cmp_parser_get_token(state, 0)->type) != 0) {
         token_t *t_operator = cmp_parser_get_token(state, 0);
         state->i++;
-        token_t *t_operand = cmp_parser_get_token(state, 0);
+        if (!cmp_parser_push_value(state)) {
+            state->i = i_start;
+            return false;
+        }
         state->i++;
 
-        // TEMP: TODO: parser_add_ins
+        inter_operator_t inter_op = INTER_OPERATOR_UN_ADDR_OF;
+        switch (t_operator->type) {
+            case TOKEN_AMPERSAND:
+                inter_op = INTER_OPERATOR_UN_ADDR_OF;
+                break;
+            case TOKEN_STAR:
+                inter_op = INTER_OPERATOR_UN_DEREFERENCE;
+                break;
+            case TOKEN_DOUBLE_PLUS:
+                inter_op = INTER_OPERATOR_UN_INCREMENT;
+                break;
+            case TOKEN_DOUBLE_MINUS:
+                inter_op = INTER_OPERATOR_UN_DECREMENT;
+                break;
+            case TOKEN_MINUS:
+                inter_op = INTER_OPERATOR_UN_NEGATE;
+                break;
+            case TOKEN_TILDE:
+                inter_op = INTER_OPERATOR_UN_INVERT;
+                break;
+            default:
+                printf(ERROR TOKEN_POS_FORMAT "unknown operator" ENDL, TOKEN_POS_FORMAT_VALUES(*t_operator));
+                break;
+        }
+        // INTER_OPERATOR_UN_TO_BOOL
+        cmp_parser_add_ins(state, NULL, INTER_INS_STACK_OPERATION, &(inter_ins_stack_operation_t){
+            .to = "temp_result",
+            .op = inter_op,
+            .op2 = false,
+            .type_a = PARSER_TYPE_UINT16,
+        }, sizeof(inter_ins_stack_operation_t));
+        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = "temp_result" }, sizeof(inter_ins_push_t));
 
         return true;
     }
@@ -442,11 +481,73 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
     for (uint32_t i = state->i; i > i_start; i -= 2) {
         token_t *t_operator = &state->tokens[i];
         state->i++;
-        token_t *t_operand = &state->tokens[i - 1];
+        if (!cmp_parser_push_value(&state)) {
+            state->i = i_start;
+            return false;
+        }
         state->i++;
-
-        // right operand is pushed
-        // TEMP: TODO: parser_add_ins
+        inter_operator_t inter_op = INTER_OPERATOR_UN_ADDR_OF;
+        switch (t_operator->type) {
+            case TOKEN_PLUS:
+                inter_op = INTER_OPERATOR_BI_ADD;
+                break;
+            case TOKEN_MINUS:
+                inter_op = INTER_OPERATOR_BI_SUB;
+                break;
+            case TOKEN_STAR:
+                inter_op = INTER_OPERATOR_BI_MUL;
+                break;
+            case TOKEN_SLASH:
+                inter_op = INTER_OPERATOR_BI_DIV;
+                break;
+            case TOKEN_PERCENT:
+                inter_op = INTER_OPERATOR_BI_MOD;
+                break;
+            case TOKEN_AMPERSAND:
+                inter_op = INTER_OPERATOR_BI_AND;
+                break;
+            case TOKEN_BAR:
+                inter_op = INTER_OPERATOR_BI_OR;
+                break;
+            case TOKEN_CIRCUMFLEX:
+                inter_op = INTER_OPERATOR_BI_XOR;
+                break;
+            case TOKEN_DOUBLE_LEFT:
+                inter_op = INTER_OPERATOR_BI_SHL;
+                break;
+            case TOKEN_DOUBLE_RIGHT:
+                inter_op = INTER_OPERATOR_BI_SHR;
+                break;
+            case TOKEN_LESS:
+                inter_op = INTER_OPERATOR_BI_LESS;
+                break;
+            case TOKEN_LESS_EQ:
+                inter_op = INTER_OPERATOR_BI_LESS_EQ;
+                break;
+            case TOKEN_GREATER:
+                inter_op = INTER_OPERATOR_BI_GREATER;
+                break;
+            case TOKEN_GREATER_EQ:
+                inter_op = INTER_OPERATOR_BI_GREATER_EQ;
+                break;
+            case TOKEN_EQUAL:
+                inter_op = INTER_OPERATOR_BI_EQUAL;
+                break;
+            case TOKEN_UNEQUAL:
+                inter_op = INTER_OPERATOR_BI_UNEQUAL;
+                break;
+            default:
+                printf(ERROR TOKEN_POS_FORMAT "unknown operator" ENDL, TOKEN_POS_FORMAT_VALUES(*t_operator));
+                break;
+        }
+        cmp_parser_add_ins(&state, NULL, INTER_INS_STACK_OPERATION, &(inter_ins_stack_operation_t){
+            .to = "temp_result",
+            .op = inter_op,
+            .op2 = true,
+            .type_a = PARSER_TYPE_UINT16,
+            .type_b = PARSER_TYPE_UINT16,
+        }, sizeof(inter_ins_stack_operation_t));
+        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = "temp_result" }, sizeof(inter_ins_push_t));
     }
     return true;
 
@@ -959,6 +1060,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
     cmp_tokenizer_free(tokens1, tokens1_count);
 
     parser_state_t state = {
+        .error = false,
         .tokens = tokens2,
         .tokens_count = tokens2_count,
         .ins = NULL,
@@ -971,14 +1073,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
     };
 
     /*
-    cmp_parser_add_ins(&state, "main", INTER_INS_DECLARATION, &(inter_ins_declaration_t){.type = PARSER_TYPE_UINT16, .name = "x", .fixed = false}, sizeof(inter_ins_declaration_t));
-    cmp_parser_add_ins(&state, NULL, INTER_INS_ASSIGNMENT, &(inter_ins_assignment_t){.to = "x", .from_constant = 0xfe08, .assignment_source = INTER_INS_ASSIGNMENT_SOURCE_CONSTANT}, sizeof(inter_ins_assignment_t));
-    cmp_parser_add_ins(&state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){.from = "x"}, sizeof(inter_ins_push_t));
-    cmp_parser_add_ins(&state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){.type = PARSER_TYPE_UINT16, .name = "y", .fixed = false}, sizeof(inter_ins_declaration_t));
-    cmp_parser_add_ins(&state, NULL, INTER_INS_ASSIGNMENT, &(inter_ins_assignment_t){.to = "y", .from_constant = 0xffff, .assignment_source = INTER_INS_ASSIGNMENT_SOURCE_CONSTANT}, sizeof(inter_ins_assignment_t));
-    cmp_parser_add_ins(&state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){.from = "y"}, sizeof(inter_ins_push_t));
     cmp_parser_add_ins(&state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){.type = PARSER_TYPE_UINT16, .name = "GPOA", .fixed = true, .fixed_address = 0x0200}, sizeof(inter_ins_declaration_t));
-    cmp_parser_add_ins(&state, NULL, INTER_INS_STACK_OPERATION, &(inter_ins_stack_operation_t){.op2 = true, .op = INTER_OPERATOR_BI_ADD, .to = "GPOA", .type_a = PARSER_TYPE_UINT16, .type_b = PARSER_TYPE_UINT16}, sizeof(inter_ins_stack_operation_t));
     */
 
     /*
@@ -994,7 +1089,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
     pop/increment ending loop (pop by setting the next nested one to 0?)
     */
 
-    while (cmp_parser_get_token(&state, 0)->type != TOKEN_EOF) {
+    while (cmp_parser_get_token(&state, 0)->type != TOKEN_EOF && !state.error) {
         cmp_parser_type_t decl_type;
         char *decl_name;
         if (cmp_parser_parse_declaration(&state, &decl_type, &decl_name)) {
@@ -1040,6 +1135,9 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                 }
                 // variable declaration
                 state.i++;
+                printf("declared %s as ", decl_name);
+                cmp_inter_debug_print_type(decl_type);
+                printf(ENDL);
                 continue;
             } else if (cmp_parser_get_token(&state, 0)->type == TOKEN_BRACKET_R_L) {
                 if (!state.allow_function) {
@@ -1322,9 +1420,15 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
         }
         if (state.allow_expression) {
             if (cmp_parser_parse_expression(&state)) {
+                if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
+                    printf(TOKEN_POS_FORMAT ERROR "expected semicolon" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                    return false;
+                }
+                state.i++;
                 if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = "temp_expression" }, sizeof(inter_ins_pop_t))) {
                     return false;
                 }
+                continue;
             }
         }
         // TODO: all directives should be resolved in preprocessor i think
@@ -1340,6 +1444,11 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
 
     *ins = state.ins;
     *ins_count = state.ins_count;
+
+    if (state.error) {
+        printf(ERROR "parser error");
+        return false;
+    }
 
     return true;
 }

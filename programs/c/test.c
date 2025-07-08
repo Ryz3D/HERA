@@ -8,15 +8,16 @@ void output(uint16_t data) {
 }
 
 void delay(uint16_t i) {
-    while (i > 0) {
-        i--;
-    }
+    // while (i > 0) {
+        --i;
+    // }
 }
 
 int main() {
     int16_t y = 0x65EB;
     int16_t *p = &y;
-    int16_t x = ((*p++ - 1) * 2 ^ 4);
+    int16_t x = *p; // ((*p++ - 1) * 2 ^ 4);
+    x = 4 ^ 2 * y - 1;
     // 1. take old value of p               0x65EB
     // 2. increment p
     // 3. subtract 1 from previous value    0x65EA
