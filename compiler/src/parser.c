@@ -227,7 +227,7 @@ char *cmp_parser_new_temp(parser_state_t *state, const char *prefix) {
         return NULL;
     }
     for (uint32_t num = 0; num < 10000000; num++) {
-        sprintf(prefix_num_buf, "%s_%lu", prefix, num);
+        sprintf(prefix_num_buf, "%s_%u", prefix, num);
         bool name_free = true;
         for (uint32_t i = 0; i < state->ins_count; i++) {
             if (state->ins[i].type == INTER_INS_DECLARATION) {
@@ -366,9 +366,20 @@ bool cmp_parser_push_value(parser_state_t *state) {
     token_t *t = cmp_parser_get_token(state, 0);
     cmp_parser_value_t constant_value = cmp_parser_get_value(t);
     if (constant_value.valid) {
-        cmp_parser_add_ins(state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){ .name = "temp_const", .type = constant_value.type.pure_type }, sizeof(inter_ins_push_t));
-        cmp_parser_add_ins(state, NULL, INTER_INS_ASSIGNMENT, &(inter_ins_assignment_t){ .to = "temp_const", .from_constant = constant_value.i, .assignment_source = INTER_INS_ASSIGNMENT_SOURCE_CONSTANT }, sizeof(inter_ins_assignment_t));
-        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = "temp_const" }, sizeof(inter_ins_push_t));
+        cmp_parser_add_ins(state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){
+            .name = "temp_const",
+            .type = constant_value.type.pure_type,
+            .fixed = false,
+            .fixed_address = 0x0000,
+        }, sizeof(inter_ins_push_t));
+        cmp_parser_add_ins(state, NULL, INTER_INS_ASSIGNMENT, &(inter_ins_assignment_t){
+            .to = "temp_const",
+            .from_constant = constant_value.i,
+            .assignment_source = INTER_INS_ASSIGNMENT_SOURCE_CONSTANT,
+        }, sizeof(inter_ins_assignment_t));
+        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){
+            .from = "temp_const",
+        }, sizeof(inter_ins_push_t));
         return true;
     } else if (t->type == TOKEN_KEYWORD) {
         // TODO: variable or function call?
@@ -382,6 +393,36 @@ bool cmp_parser_push_value(parser_state_t *state) {
 // returns false if not an expression
 bool cmp_parser_parse_expression(parser_state_t *state) {
     uint32_t i_start = state->i;
+
+    // TEMP: simple function call
+    if (cmp_parser_get_token(state, 0)->type == TOKEN_KEYWORD &&
+        cmp_parser_get_token(state, 1)->type == TOKEN_BRACKET_R_L) {
+        char *func_name = cmp_parser_get_token(state, 0)->str;
+        state->i += 2;
+        while (cmp_parser_get_token(state, 0)->type != TOKEN_BRACKET_R_R) {
+            // TODO: argument count and type checking
+            if (!cmp_parser_parse_expression(state)) {
+                printf(TOKEN_POS_FORMAT ERROR "expected function parameter or closing bracket" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(state, 0)));
+                return false;
+            }
+            if (cmp_parser_get_token(state, 0)->type == TOKEN_COMMA) {
+                state->i++;
+            } else if (cmp_parser_get_token(state, 0)->type != TOKEN_BRACKET_R_R) {
+                printf(TOKEN_POS_FORMAT ERROR "expected comma or closing bracket after parameter" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(state, 0)));
+                return false;
+            }
+        }
+        state->i++;
+        if (!cmp_parser_add_ins(state, NULL, INTER_INS_JUMP, &(inter_ins_jump_t){
+            .jump_condition = INTER_INS_JUMP_CONDITION_NONE,
+            .to = func_name,
+            .subroutine = true,
+        }, sizeof(inter_ins_jump_t))) {
+            return false;
+        }
+
+        return true;
+    }
 
     // TEMP: support prefix unary operator
     if (cmp_tokenizer_precedence_prefix_un_operator(cmp_parser_get_token(state, 0)->type) != 0) {
@@ -414,7 +455,7 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
                 inter_op = INTER_OPERATOR_UN_INVERT;
                 break;
             default:
-                printf(ERROR TOKEN_POS_FORMAT "unknown operator" ENDL, TOKEN_POS_FORMAT_VALUES(*t_operator));
+                printf(TOKEN_POS_FORMAT ERROR "unknown operator" ENDL, TOKEN_POS_FORMAT_VALUES(*t_operator));
                 break;
         }
         // INTER_OPERATOR_UN_TO_BOOL
@@ -472,22 +513,34 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
         state->i = i_start;
         return false;
     }
+    uint32_t i_end = state->i;
+    for (uint32_t i = i_start; i < i_end - 1; i++) {
+        if (state->tokens[i].type == TOKEN_KEYWORD &&
+            state->tokens[i + 1].type == TOKEN_KEYWORD) {
+            // is declaration (e.g. int x)
+            state->i = i_start;
+            return false;
+        }
+    }
     state->i--;
     if (!cmp_parser_push_value(state)) {
         state->i = i_start;
         return false;
     }
     state->i--;
-    for (uint32_t i = state->i; i > i_start; i -= 2) {
-        token_t *t_operator = &state->tokens[i];
-        state->i++;
-        if (!cmp_parser_push_value(&state)) {
+    for (; state->i > i_start; state->i--) {
+        token_t *t_operator = cmp_parser_get_token(state, 0);
+        state->i--;
+        if (!cmp_parser_push_value(state)) {
             state->i = i_start;
             return false;
         }
-        state->i++;
         inter_operator_t inter_op = INTER_OPERATOR_UN_ADDR_OF;
         switch (t_operator->type) {
+            case TOKEN_ASSIGN:
+                // TODO
+                // inter_op = INTER_OPERATOR_BI_ASSIGN;
+                break;
             case TOKEN_PLUS:
                 inter_op = INTER_OPERATOR_BI_ADD;
                 break;
@@ -537,10 +590,10 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
                 inter_op = INTER_OPERATOR_BI_UNEQUAL;
                 break;
             default:
-                printf(ERROR TOKEN_POS_FORMAT "unknown operator" ENDL, TOKEN_POS_FORMAT_VALUES(*t_operator));
+                printf(TOKEN_POS_FORMAT ERROR "unknown operator" ENDL, TOKEN_POS_FORMAT_VALUES(*t_operator));
                 break;
         }
-        cmp_parser_add_ins(&state, NULL, INTER_INS_STACK_OPERATION, &(inter_ins_stack_operation_t){
+        cmp_parser_add_ins(state, NULL, INTER_INS_STACK_OPERATION, &(inter_ins_stack_operation_t){
             .to = "temp_result",
             .op = inter_op,
             .op2 = true,
@@ -549,6 +602,7 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
         }, sizeof(inter_ins_stack_operation_t));
         cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = "temp_result" }, sizeof(inter_ins_push_t));
     }
+    state->i = i_end;
     return true;
 
     /*
@@ -903,7 +957,7 @@ bool cmp_parser_parse_expression_1(parser_state_t *state) {
 
 // returns false if not a declaration
 bool cmp_parser_parse_declaration(parser_state_t *state, cmp_parser_type_t *decl_type, char **decl_name) {
-    uint32_t start_i = state->i;
+    uint32_t i_start = state->i;
 
     for (uint8_t i = 0; i < CMP_PARSER_TYPE_MAX_MODIFIERS; i++) {
         decl_type->modifiers[i] = PARSER_MODIFIER_NONE;
@@ -952,7 +1006,7 @@ bool cmp_parser_parse_declaration(parser_state_t *state, cmp_parser_type_t *decl
     // char, int, long long, uint32_t
     token_t *token_type = cmp_parser_get_token(state, 0);
     if (token_type->type != TOKEN_KEYWORD) {
-        state->i = start_i;
+        state->i = i_start;
         return false;
     }
     if (!strcmp(token_type->str, "void")) {
@@ -1017,7 +1071,7 @@ bool cmp_parser_parse_declaration(parser_state_t *state, cmp_parser_type_t *decl
     token_t *token_name = cmp_parser_get_token(state, 0);
     if (token_name->type != TOKEN_KEYWORD) {
         free(decl_type->other_type);
-        state->i = start_i;
+        state->i = i_start;
         return false;
     }
     *decl_name = malloc(strlen(CMP_INTER_PREFIX_USER) + strlen(token_name->str) + 1);
@@ -1073,15 +1127,11 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
     };
 
     /*
-    cmp_parser_add_ins(&state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){.type = PARSER_TYPE_UINT16, .name = "GPOA", .fixed = true, .fixed_address = 0x0200}, sizeof(inter_ins_declaration_t));
-    */
-
-    /*
     TODO:
 
     index tree:
     [1, 2, 5, 1, 3]
-    hera_function1_loop2_if5_loop1_loop3
+    hera_file_x_function_x_loop2_if5_loop1_loop3
       -> inter label
 
     set function name as prefix
@@ -1090,106 +1140,6 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
     */
 
     while (cmp_parser_get_token(&state, 0)->type != TOKEN_EOF && !state.error) {
-        cmp_parser_type_t decl_type;
-        char *decl_name;
-        if (cmp_parser_parse_declaration(&state, &decl_type, &decl_name)) {
-            bool assignment = false;
-            if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_L) {
-                // variable declaration
-                // TODO: variable modifiers
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){
-                    .fixed = false,
-                    .fixed_address = 0x0000,
-                    .name = decl_name,
-                    .type = decl_type.pure_type,
-                }, sizeof(inter_ins_declaration_t))) {
-                    return false;
-                }
-            }
-
-            if (cmp_parser_get_token(&state, 0)->type == TOKEN_ASSIGN) {
-                if (!state.allow_declaration) {
-                    printf(TOKEN_POS_FORMAT ERROR "variable declaration at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                    return false;
-                }
-                state.i++;
-                if (!cmp_parser_parse_expression(&state)) {
-                    printf(TOKEN_POS_FORMAT ERROR "variable assignment expected expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                    return false;
-                }
-                if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
-                    printf(TOKEN_POS_FORMAT ERROR "expected semicolon after variable assignment" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                    return false;
-                }
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){
-                    .to = decl_name,
-                }, sizeof(inter_ins_pop_t))) {
-                    return false;
-                }
-                assignment = true;
-            }
-            if (cmp_parser_get_token(&state, 0)->type == TOKEN_SEMICOLON) {
-                if (!state.allow_declaration) {
-                    printf(TOKEN_POS_FORMAT ERROR "variable declaration at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                    return false;
-                }
-                // variable declaration
-                state.i++;
-                printf("declared %s as ", decl_name);
-                cmp_inter_debug_print_type(decl_type);
-                printf(ENDL);
-                continue;
-            } else if (cmp_parser_get_token(&state, 0)->type == TOKEN_BRACKET_R_L) {
-                if (!state.allow_function) {
-                    printf(TOKEN_POS_FORMAT ERROR "function declaration at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                    return false;
-                }
-                if (assignment) {
-                    printf(TOKEN_POS_FORMAT ERROR "can not declare function arguments after assignment" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                    return false;
-                }
-                // function declaration
-                state.i++;
-                printf("declared function %s returning ", decl_name);
-                cmp_inter_debug_print_type(decl_type);
-                printf(ENDL);
-                while (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
-                    cmp_parser_type_t arg_type;
-                    char *arg_name;
-                    if (!cmp_parser_parse_declaration(&state, &arg_type, &arg_name)) {
-                        printf(TOKEN_POS_FORMAT ERROR "expected valid argument declaration" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                        return false;
-                    }
-                    printf("argument %s as ", arg_name);
-                    cmp_inter_debug_print_type(arg_type);
-                    printf(ENDL);
-                    if (cmp_parser_get_token(&state, 0)->type == TOKEN_COMMA) {
-                        state.i++;
-                    } else if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
-                        printf(TOKEN_POS_FORMAT ERROR "expected comma or closing bracket" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                        return false;
-                    }
-                }
-                state.i++;
-                if (cmp_parser_get_token(&state, 0)->type == TOKEN_SEMICOLON) {
-                    // TODO: store function declaration (this should be done anyway to typecheck and stuff)
-                } else if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_C_L) {
-                    printf(TOKEN_POS_FORMAT ERROR "expected opening curly bracket for function body" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                    return false;
-                }
-                state.i++;
-                // TODO: either parse if/while/for body in place (meh) or count number of nested blocks to know when to return to file-level context
-                state.allow_declaration = true;
-                state.allow_typedefs = true;
-                state.allow_function = false;
-                state.allow_expression = true;
-                state.allow_flow_control = true;
-                continue;
-            } else {
-                printf(TOKEN_POS_FORMAT ERROR "expected semicolon for variable declaration or opening bracket for function" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
-                return false;
-            }
-        }
         if (cmp_parser_get_token(&state, 0)->type == TOKEN_KEYWORD) {
             token_t *token_next = cmp_parser_get_token(&state, 0);
             if (!strcmp(token_next->str, "typedef")) {
@@ -1198,6 +1148,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     return false;
                 }
                 // TODO: typedef
+                continue;
             } else if (!strcmp(token_next->str, "if")) {
                 if (!state.allow_flow_control) {
                     printf(TOKEN_POS_FORMAT ERROR "if statement at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
@@ -1233,6 +1184,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                 }
                 // TODO: single expression body
                 // TODO: EXPECT EXPRESSION RIGHT HERE
+                continue;
             } else if (!strcmp(token_next->str, "while")) {
                 if (!state.allow_flow_control) {
                     printf(TOKEN_POS_FORMAT ERROR "while loop at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
@@ -1268,6 +1220,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                 }
                 // TODO: single expression body
                 // TODO: EXPECT EXPRESSION RIGHT HERE
+                continue;
             } else if (!strcmp(token_next->str, "do")) {
                 if (!state.allow_flow_control) {
                     printf(TOKEN_POS_FORMAT ERROR "do-while loop at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
@@ -1312,6 +1265,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     return false;
                 }
                 // TODO: evaluate condition by pop and branch
+                continue;
             } else if (!strcmp(token_next->str, "for")) {
                 if (!state.allow_flow_control) {
                     printf(TOKEN_POS_FORMAT ERROR "for loop at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
@@ -1372,6 +1326,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                 }
                 // TODO: single expression body
                 // TODO: EXPECT EXPRESSION RIGHT HERE
+                continue;
             } else if (!strcmp(token_next->str, "switch")) {
                 if (!state.allow_flow_control) {
                     printf(TOKEN_POS_FORMAT ERROR "switch at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
@@ -1402,6 +1357,40 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     }
                     state.i++;
                 }
+                continue;
+            } else if (!strcmp(token_next->str, "break")) {
+                state.i++;
+                if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
+                    printf(TOKEN_POS_FORMAT ERROR "expected semicolon" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                    return false;
+                }
+                state.i++;
+                // TODO
+                continue;
+            } else if (!strcmp(token_next->str, "continue")) {
+                state.i++;
+                if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
+                    printf(TOKEN_POS_FORMAT ERROR "expected semicolon" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                    return false;
+                }
+                state.i++;
+                // TODO
+                continue;
+            } else if (!strcmp(token_next->str, "return")) {
+                state.i++;
+                bool has_value = false;
+                if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
+                    if (!cmp_parser_parse_expression(&state)) {
+                        printf(TOKEN_POS_FORMAT ERROR "expected expression or semicolon after return" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                        return false;
+                    }
+                    has_value = true;
+                }
+                state.i++;
+                if (has_value) {
+                }
+                // TODO
+                continue;
             }
         }
         if (cmp_parser_get_token(&state, 0)->type == TOKEN_BRACKET_C_R) {
@@ -1416,6 +1405,85 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
             } else {
                 printf(TOKEN_POS_FORMAT ERROR "unexpected closing bracket" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                 return false;
+            }
+        }
+        cmp_parser_type_t decl_type;
+        char *decl_name;
+        if (cmp_parser_parse_declaration(&state, &decl_type, &decl_name)) {
+            if (cmp_parser_get_token(&state, 0)->type == TOKEN_BRACKET_R_L) {
+                if (!state.allow_function) {
+                    printf(TOKEN_POS_FORMAT ERROR "function declaration at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                    return false;
+                }
+                // function declaration
+                state.i++;
+                while (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
+                    cmp_parser_type_t arg_type;
+                    char *arg_name;
+                    if (!cmp_parser_parse_declaration(&state, &arg_type, &arg_name)) {
+                        printf(TOKEN_POS_FORMAT ERROR "expected valid argument declaration" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                        return false;
+                    }
+                    if (cmp_parser_get_token(&state, 0)->type == TOKEN_COMMA) {
+                        state.i++;
+                    } else if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
+                        printf(TOKEN_POS_FORMAT ERROR "expected comma or closing bracket" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                        return false;
+                    }
+                }
+                state.i++;
+                if (cmp_parser_get_token(&state, 0)->type == TOKEN_SEMICOLON) {
+                    // TODO: store function declaration (this should be done anyway to typecheck and stuff)
+                } else if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_C_L) {
+                    printf(TOKEN_POS_FORMAT ERROR "expected opening curly bracket for function body" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                    return false;
+                }
+                state.i++;
+                // TODO: either parse if/while/for body in place (meh) or count number of nested blocks to know when to return to file-level context
+                state.allow_declaration = true;
+                state.allow_typedefs = true;
+                state.allow_function = false;
+                state.allow_expression = true;
+                state.allow_flow_control = true;
+                continue;
+            } else if (cmp_parser_get_token(&state, 0)->type == TOKEN_ASSIGN || cmp_parser_get_token(&state, 0)->type == TOKEN_SEMICOLON) {
+                // TODO: variable modifiers
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){
+                    .fixed = false,
+                    .fixed_address = 0x0000,
+                    .name = decl_name,
+                    .type = decl_type.pure_type,
+                }, sizeof(inter_ins_declaration_t))) {
+                    return false;
+                }
+                if (!state.allow_declaration) {
+                    printf(TOKEN_POS_FORMAT ERROR "variable declaration at this point is inconceivable" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                    return false;
+                }
+                if (cmp_parser_get_token(&state, 0)->type == TOKEN_ASSIGN) {
+                    state.i++;
+                    if (!cmp_parser_parse_expression(&state)) {
+                        printf(TOKEN_POS_FORMAT ERROR "variable assignment expected expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                        return false;
+                    }
+                    if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
+                        printf(TOKEN_POS_FORMAT ERROR "expected semicolon after variable assignment" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                        return false;
+                    }
+                    state.i++;
+                    if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){
+                        .to = decl_name,
+                    }, sizeof(inter_ins_pop_t))) {
+                        return false;
+                    }
+                    continue;
+                } else if (cmp_parser_get_token(&state, 0)->type == TOKEN_SEMICOLON) {
+                    state.i++;
+                    continue;
+                } else {
+                    printf(TOKEN_POS_FORMAT ERROR "expected assignment or semicolon after variable declaration" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
+                    return false;
+                }
             }
         }
         if (state.allow_expression) {
