@@ -30,6 +30,10 @@ int main(int argc, char *argv[]) {
 
     cmp_inter_debug_print(inter_ins, inter_ins_count);
 
+    printf(ENDL "---" ENDL ENDL);
+
+    cmp_inter_debug_sim(inter_ins, inter_ins_count);
+
     free(inter_ins);
 
     /*

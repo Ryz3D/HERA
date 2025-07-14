@@ -199,7 +199,37 @@ token_t *cmp_parser_get_token(parser_state_t *state, int32_t offset) {
     }
 }
 
-bool cmp_parser_add_ins(parser_state_t *state, char *label, inter_ins_type_t type, void *ins, size_t ins_size) {
+bool cmp_parser_add_ins(parser_state_t *state, char *label, inter_ins_type_t type, void *ins) {
+    size_t ins_size = 0;
+    switch (type) {
+        case INTER_INS_DECLARATION:
+            ins_size = sizeof(inter_ins_declaration_t);
+            break;
+        case INTER_INS_ASSIGNMENT:
+            ins_size = sizeof(inter_ins_assignment_t);
+            break;
+        case INTER_INS_PUSH:
+            ins_size = sizeof(inter_ins_push_t);
+            break;
+        case INTER_INS_POP:
+            ins_size = sizeof(inter_ins_pop_t);
+            break;
+        case INTER_INS_JUMP:
+            ins_size = sizeof(inter_ins_jump_t);
+            break;
+        case INTER_INS_RETURN:
+            ins_size = sizeof(inter_ins_return_t);
+            break;
+        case INTER_INS_OPERATION:
+            ins_size = sizeof(inter_ins_operation_t);
+            break;
+        case INTER_INS_STACK_OPERATION:
+            ins_size = sizeof(inter_ins_stack_operation_t);
+            break;
+        default:
+            printf(ERROR "unknown inter ins type %i" ENDL, type);
+            return false;
+    }
     state->ins_count++;
     state->ins = realloc(state->ins, state->ins_count * sizeof(inter_ins_t));
     if (state->ins == NULL) {
@@ -287,8 +317,10 @@ cmp_parser_value_t cmp_parser_get_value(token_t *t) {
         case TOKEN_INT_BIN: {
             uint16_t n = 0;
             for (uint32_t i = 0; i < strlen(t->str); i++) {
+                if (i > 0) {
+                    n *= 2;
+                }
                 n += t->str[i] - '0';
-                n *= 2;
             }
             return (cmp_parser_value_t){
                 .valid = true,
@@ -299,8 +331,10 @@ cmp_parser_value_t cmp_parser_get_value(token_t *t) {
         case TOKEN_INT_OCT: {
             uint16_t n = 0;
             for (uint32_t i = 0; i < strlen(t->str); i++) {
+                if (i > 0) {
+                    n *= 8;
+                }
                 n += t->str[i] - '0';
-                n *= 8;
             }
             return (cmp_parser_value_t){
                 .valid = true,
@@ -311,8 +345,10 @@ cmp_parser_value_t cmp_parser_get_value(token_t *t) {
         case TOKEN_INT_DEC: {
             uint16_t n = 0;
             for (uint32_t i = 0; i < strlen(t->str); i++) {
+                if (i > 0) {
+                    n *= 10;
+                }
                 n += t->str[i] - '0';
-                n *= 10;
             }
             return (cmp_parser_value_t){
                 .valid = true,
@@ -323,6 +359,9 @@ cmp_parser_value_t cmp_parser_get_value(token_t *t) {
         case TOKEN_INT_HEX: {
             uint16_t n = 0;
             for (uint32_t i = 0; i < strlen(t->str); i++) {
+                if (i > 0) {
+                    n *= 16;
+                }
                 if (t->str[i] >= 'a' && t->str[i] <= 'f') {
                     n += t->str[i] - 'a' + 10;
                 } else if (t->str[i] >= 'A' && t->str[i] <= 'F') {
@@ -330,7 +369,6 @@ cmp_parser_value_t cmp_parser_get_value(token_t *t) {
                 } else {
                     n += t->str[i] - '0';
                 }
-                n *= 16;
             }
             return (cmp_parser_value_t){
                 .valid = true,
@@ -366,24 +404,28 @@ bool cmp_parser_push_value(parser_state_t *state) {
     token_t *t = cmp_parser_get_token(state, 0);
     cmp_parser_value_t constant_value = cmp_parser_get_value(t);
     if (constant_value.valid) {
-        cmp_parser_add_ins(state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){
-            .name = "temp_const",
-            .type = constant_value.type.pure_type,
-            .fixed = false,
-            .fixed_address = 0x0000,
-        }, sizeof(inter_ins_push_t));
         cmp_parser_add_ins(state, NULL, INTER_INS_ASSIGNMENT, &(inter_ins_assignment_t){
             .to = "temp_const",
             .from_constant = constant_value.i,
             .assignment_source = INTER_INS_ASSIGNMENT_SOURCE_CONSTANT,
-        }, sizeof(inter_ins_assignment_t));
+        });
         cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){
             .from = "temp_const",
-        }, sizeof(inter_ins_push_t));
+        });
         return true;
     } else if (t->type == TOKEN_KEYWORD) {
-        // TODO: variable or function call?
-        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = t->str }, sizeof(inter_ins_push_t));
+        if (cmp_parser_get_token(state, 1)->type == TOKEN_BRACKET_R_L) {
+            // TODO: function call
+            // TODO: don't push if void
+        } else {
+            // TODO: variable inter name lookup
+            char *inter_name = malloc(strlen(CMP_INTER_PREFIX_USER) + strlen(t->str) + 1);
+            memcpy(inter_name, CMP_INTER_PREFIX_USER, strlen(CMP_INTER_PREFIX_USER));
+            memcpy(inter_name + strlen(CMP_INTER_PREFIX_USER), t->str, strlen(t->str) + 1);
+            cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){
+                .from = inter_name,
+            });
+        }
         return true;
     } else {
         return false;
@@ -417,7 +459,7 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
             .jump_condition = INTER_INS_JUMP_CONDITION_NONE,
             .to = func_name,
             .subroutine = true,
-        }, sizeof(inter_ins_jump_t))) {
+        })) {
             return false;
         }
 
@@ -460,12 +502,12 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
         }
         // INTER_OPERATOR_UN_TO_BOOL
         cmp_parser_add_ins(state, NULL, INTER_INS_STACK_OPERATION, &(inter_ins_stack_operation_t){
-            .to = "temp_result",
+            .to = "temp_expression",
             .op = inter_op,
             .op2 = false,
             .type_a = PARSER_TYPE_UINT16,
-        }, sizeof(inter_ins_stack_operation_t));
-        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = "temp_result" }, sizeof(inter_ins_push_t));
+        });
+        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = "temp_expression" });
 
         return true;
     }
@@ -538,7 +580,7 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
         inter_operator_t inter_op = INTER_OPERATOR_UN_ADDR_OF;
         switch (t_operator->type) {
             case TOKEN_ASSIGN:
-                // TODO
+                // TODO: PEEK DONT POP -> value reuse
                 // inter_op = INTER_OPERATOR_BI_ASSIGN;
                 break;
             case TOKEN_PLUS:
@@ -594,22 +636,16 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
                 break;
         }
         cmp_parser_add_ins(state, NULL, INTER_INS_STACK_OPERATION, &(inter_ins_stack_operation_t){
-            .to = "temp_result",
+            .to = "temp_expression",
             .op = inter_op,
             .op2 = true,
             .type_a = PARSER_TYPE_UINT16,
             .type_b = PARSER_TYPE_UINT16,
-        }, sizeof(inter_ins_stack_operation_t));
-        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = "temp_result" }, sizeof(inter_ins_push_t));
+        });
+        cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){ .from = "temp_expression" });
     }
     state->i = i_end;
     return true;
-
-    /*
-    TODO: function calls -> push parameters, subroutine jump, (push return value). make sure to pop all parameters and return value (or don't even push if not used)
-    TODO: assignment at declaration (for now only at declaration) -> pop expression result into variable
-    TODO: only expression -> pop expression result into void/temp
-    */
 
     token_t *prefix_un_op = NULL;
     if (cmp_tokenizer_precedence_prefix_un_operator(cmp_parser_get_token(state, 0)->type) != 0) {
@@ -663,17 +699,15 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
                 break;
         }
         cmp_parser_add_ins(state, NULL, INTER_INS_STACK_OPERATION, &(inter_ins_stack_operation_t){
-                                                                       .to = var_temp,
-                                                                       .type_a = PARSER_TYPE_UINT16,
-                                                                       .type_b = PARSER_TYPE_INVALID,
-                                                                       .op2 = false,
-                                                                       .op = inter_op,
-                                                                   },
-                           sizeof(inter_ins_stack_operation_t));
+            .to = var_temp,
+            .type_a = PARSER_TYPE_UINT16,
+            .type_b = PARSER_TYPE_INVALID,
+            .op2 = false,
+            .op = inter_op,
+        });
         cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){
-                                                            .from = var_temp,
-                                                        },
-                           sizeof(inter_ins_push_t));
+            .from = var_temp,
+        });
         return true;
     } else if (cmp_tokenizer_precedence_suffix_un_operator(op->type) != 0) {
         // suffix
@@ -695,17 +729,15 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
                 break;
         }
         cmp_parser_add_ins(state, NULL, INTER_INS_STACK_OPERATION, &(inter_ins_stack_operation_t){
-                                                                       .to = var_temp,
-                                                                       .type_a = PARSER_TYPE_UINT16,
-                                                                       .type_b = PARSER_TYPE_INVALID,
-                                                                       .op2 = false,
-                                                                       .op = inter_op,
-                                                                   },
-                           sizeof(inter_ins_stack_operation_t));
+            .to = var_temp,
+            .type_a = PARSER_TYPE_UINT16,
+            .type_b = PARSER_TYPE_INVALID,
+            .op2 = false,
+            .op = inter_op,
+        });
         cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){
-                                                            .from = var_temp,
-                                                        },
-                           sizeof(inter_ins_push_t));
+            .from = var_temp,
+        });
         return true;
     } else if (cmp_tokenizer_precedence_bi_operator(op->type) == 0) {
         // expected binary op
@@ -806,12 +838,10 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
                                                                    .type_b = PARSER_TYPE_UINT16,
                                                                    .op2 = true,
                                                                    .op = inter_op,
-                                                               },
-                       sizeof(inter_ins_stack_operation_t));
+                                                               });
     cmp_parser_add_ins(state, NULL, INTER_INS_PUSH, &(inter_ins_push_t){
                                                         .from = var_temp,
-                                                    },
-                       sizeof(inter_ins_push_t));
+                                                    });
     return true;
 
     /*
@@ -850,6 +880,7 @@ bool cmp_parser_parse_expression(parser_state_t *state) {
                         // function call
                         // TODO: nested expression parser call, then expect closing round bracket
                         uint32_t end = cmp_parser_find_closing_bracket(state);
+                        (void)end;
                     } else {
                         // variable
                         // TODO: struct access, struct indirect access, array access
@@ -1126,6 +1157,19 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
         .allow_flow_control = false,
     };
 
+    cmp_parser_add_ins(&state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){
+        .name = "temp_const",
+        .type = PARSER_TYPE_UINT16,
+        .fixed = false,
+        .fixed_address = 0x0000,
+    });
+    cmp_parser_add_ins(&state, NULL, INTER_INS_DECLARATION, &(inter_ins_declaration_t){
+        .name = "temp_expression",
+        .type = PARSER_TYPE_UINT16,
+        .fixed = false,
+        .fixed_address = 0x0000,
+    });
+
     /*
     TODO:
 
@@ -1163,7 +1207,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected condition expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL })) {
                     return false;
                 }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
@@ -1199,7 +1243,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected condition expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL })) {
                     return false;
                 }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
@@ -1252,7 +1296,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected condition expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL })) {
                     return false;
                 }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
@@ -1280,7 +1324,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected init expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL })) {
                     return false;
                 }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
@@ -1292,7 +1336,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected condition expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL })) {
                     return false;
                 }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_SEMICOLON) {
@@ -1304,7 +1348,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected loop expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL })) {
                     return false;
                 }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
@@ -1341,7 +1385,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     printf(TOKEN_POS_FORMAT ERROR "expected value expression" ENDL, TOKEN_POS_FORMAT_VALUES(*cmp_parser_get_token(&state, 0)));
                     return false;
                 }
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL }, sizeof(inter_ins_pop_t))) {
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = NULL })) {
                     return false;
                 }
                 if (cmp_parser_get_token(&state, 0)->type != TOKEN_BRACKET_R_R) {
@@ -1453,7 +1497,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     .fixed_address = 0x0000,
                     .name = decl_name,
                     .type = decl_type.pure_type,
-                }, sizeof(inter_ins_declaration_t))) {
+                })) {
                     return false;
                 }
                 if (!state.allow_declaration) {
@@ -1473,7 +1517,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     state.i++;
                     if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){
                         .to = decl_name,
-                    }, sizeof(inter_ins_pop_t))) {
+                    })) {
                         return false;
                     }
                     continue;
@@ -1493,7 +1537,7 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
                     return false;
                 }
                 state.i++;
-                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = "temp_expression" }, sizeof(inter_ins_pop_t))) {
+                if (!cmp_parser_add_ins(&state, NULL, INTER_INS_POP, &(inter_ins_pop_t){ .to = "temp_expression" })) {
                     return false;
                 }
                 continue;
@@ -1764,15 +1808,15 @@ void cmp_inter_debug_print(inter_ins_t *ins, uint32_t ins_count) {
                 printf("%s = ", ins_t->to);
                 if (!ins_t->op2) {
                     cmp_inter_debug_print_un_operator(ins_t->op);
-                    printf("(");
+                    printf("(POP ");
                     cmp_inter_debug_print_pure_type(ins_t->type_a, NULL);
                     printf(")" ENDL);
                 } else {
-                    printf("(");
+                    printf("(POP ");
                     cmp_inter_debug_print_pure_type(ins_t->type_a, NULL);
                     printf(") ");
                     cmp_inter_debug_print_bi_operator(ins_t->op);
-                    printf(" (");
+                    printf(" (POP ");
                     cmp_inter_debug_print_pure_type(ins_t->type_b, NULL);
                     printf(")" ENDL);
                 }
@@ -1783,6 +1827,242 @@ void cmp_inter_debug_print(inter_ins_t *ins, uint32_t ins_count) {
                 break;
         }
     }
+}
+
+// TODO: maybe inter DECL using size in bytes (structs, arrays), type-check in parser, translate operations to byte-wise
+
+typedef struct inter_debug_var {
+    char *name;
+    uint32_t size;
+    uint32_t value;
+} inter_debug_var_t;
+
+typedef struct inter_debug_state {
+    uint32_t pc;
+    uint32_t *stack;
+    uint32_t stack_size;
+    inter_debug_var_t *vars;
+    uint32_t vars_count;
+} inter_debug_state_t;
+
+inter_debug_var_t *cmp_inter_debug_find_var(inter_debug_state_t *state, char *name) {
+    for (uint32_t i = 0; i < state->vars_count; i++) {
+        if (state->vars[i].name == NULL) {
+            continue;
+        }
+        if (!strcmp(state->vars[i].name, name)) {
+            return &state->vars[i];
+        }
+    }
+    return NULL;
+}
+
+bool cmp_inter_debug_sim(inter_ins_t *ins, uint32_t ins_count) {
+    inter_debug_state_t state = {
+        .pc = 0,
+        .stack = NULL,
+        .stack_size = 0,
+        .vars = NULL,
+        .vars_count = 0,
+    };
+
+    while (state.pc < ins_count) {
+        switch (ins[state.pc].type) {
+            case INTER_INS_DECLARATION: {
+                inter_ins_declaration_t *ins_t = (inter_ins_declaration_t*)ins[state.pc].ins;
+                if (cmp_inter_debug_find_var(&state, ins_t->name) != NULL) {
+                    printf(ERROR "inter_sim redeclared variable \"%s\" at %u" ENDL, ins_t->name, state.pc);
+                }
+                state.vars_count++;
+                state.vars = realloc(state.vars, state.vars_count * sizeof(inter_debug_var_t));
+                if (state.vars == NULL) {
+                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    return false;
+                }
+                state.vars[state.vars_count - 1].name = malloc(strlen(ins_t->name) + 1);
+                if (state.vars[state.vars_count - 1].name == NULL) {
+                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    return false;
+                }
+                memcpy(state.vars[state.vars_count - 1].name, ins_t->name, strlen(ins_t->name) + 1);
+                state.vars[state.vars_count - 1].size = 16;
+                state.vars[state.vars_count - 1].value = 0;
+                break;
+            }
+            case INTER_INS_ASSIGNMENT: {
+                inter_ins_assignment_t *ins_t = (inter_ins_assignment_t*)ins[state.pc].ins;
+                inter_debug_var_t *var;
+                if ((var = cmp_inter_debug_find_var(&state, ins_t->to)) == NULL) {
+                    printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->to, state.pc);
+                    return false;
+                }
+                switch (ins_t->assignment_source) {
+                    case INTER_INS_ASSIGNMENT_SOURCE_CONSTANT:
+                        var->value = ins_t->from_constant;
+                        break;
+                    case INTER_INS_ASSIGNMENT_SOURCE_VARIABLE: {
+                        inter_debug_var_t *var2;
+                        if ((var2 = cmp_inter_debug_find_var(&state, ins_t->from_variable)) == NULL) {
+                            printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->from_variable, state.pc);
+                            return false;
+                        }
+                        var->value = var2->value;
+                        break;
+                    }
+                    default:
+                        printf(ERROR "inter_sim unknown assignment source %u at %u" ENDL, ins_t->assignment_source, state.pc);
+                        break;
+                }
+                break;
+            }
+            case INTER_INS_PUSH: {
+                inter_ins_push_t *ins_t = (inter_ins_push_t*)ins[state.pc].ins;
+                state.stack_size++;
+                state.stack = realloc(state.stack, state.stack_size * sizeof(uint32_t));
+                if (state.stack == NULL) {
+                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    return false;
+                }
+                inter_debug_var_t *var;
+                if ((var = cmp_inter_debug_find_var(&state, ins_t->from)) == NULL) {
+                    printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->from, state.pc);
+                    return false;
+                }
+                state.stack[state.stack_size - 1] = var->value;
+                break;
+            }
+            case INTER_INS_POP: {
+                inter_ins_pop_t *ins_t = (inter_ins_pop_t*)ins[state.pc].ins;
+                if (state.stack_size == 0) {
+                    printf(ERROR "inter_sim stack empty" ENDL);
+                    return false;
+                }
+                inter_debug_var_t *var;
+                if ((var = cmp_inter_debug_find_var(&state, ins_t->to)) == NULL) {
+                    printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->to, state.pc);
+                    return false;
+                }
+                var->value = state.stack[state.stack_size - 1];
+                printf("(inter_sim) %s = %i (0x%04X)" ENDL, var->name, (int16_t)var->value, (uint16_t)var->value);
+                state.stack_size--;
+                // state.stack = realloc(state.stack, state.stack_size * sizeof(uint32_t));
+                if (state.stack == NULL) {
+                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    return false;
+                }
+                break;
+            }
+            case INTER_INS_JUMP:
+                break;
+            case INTER_INS_RETURN:
+                break;
+            case INTER_INS_OPERATION:
+                break;
+            case INTER_INS_STACK_OPERATION: {
+                inter_ins_stack_operation_t *ins_t = (inter_ins_stack_operation_t*)ins[state.pc].ins;
+                if (state.stack_size == 0 || (state.stack_size <= 1 && ins_t->op2)) {
+                    printf(ERROR "inter_sim stack empty" ENDL);
+                    return false;
+                }
+                uint16_t var1 = state.stack[state.stack_size - 1];
+                state.stack_size--;
+                uint16_t var2 = 0;
+                if (ins_t->op2) {
+                    var2 = state.stack[state.stack_size - 1];
+                    state.stack_size--;
+                }
+                // state.stack = realloc(state.stack, state.stack_size * sizeof(uint32_t));
+                if (state.stack == NULL) {
+                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    return false;
+                }
+                inter_debug_var_t *var;
+                if ((var = cmp_inter_debug_find_var(&state, ins_t->to)) == NULL) {
+                    printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->to, state.pc);
+                    return false;
+                }
+                switch (ins_t->op) {
+                    case INTER_OPERATOR_UN_ADDR_OF:
+                        var->value = 0;
+                        break;
+                    case INTER_OPERATOR_UN_DEREFERENCE:
+                        var->value = 0;
+                        break;
+                    case INTER_OPERATOR_UN_INCREMENT:
+                        var->value = (int16_t)var1 + 1;
+                        break;
+                    case INTER_OPERATOR_UN_DECREMENT:
+                        var->value = (int16_t)var1 - 1;
+                        break;
+                    case INTER_OPERATOR_UN_NEGATE:
+                        var->value = -(int16_t)var1;
+                        break;
+                    case INTER_OPERATOR_UN_INVERT:
+                        var->value = ~var1;
+                        break;
+                    case INTER_OPERATOR_UN_TO_BOOL:
+                        var->value = var1 ? 1 : 0;
+                        break;
+                    case INTER_OPERATOR_BI_ADD:
+                        var->value = (int16_t)var1 + (int16_t)var2;
+                        break;
+                    case INTER_OPERATOR_BI_SUB:
+                        var->value = (int16_t)var1 - (int16_t)var2;
+                        break;
+                    case INTER_OPERATOR_BI_MUL:
+                        var->value = (int16_t)var1 * (int16_t)var2;
+                        break;
+                    case INTER_OPERATOR_BI_DIV:
+                        var->value = (int16_t)var1 / (int16_t)var2;
+                        break;
+                    case INTER_OPERATOR_BI_MOD:
+                        var->value = (int16_t)var1 % (int16_t)var2;
+                        break;
+                    case INTER_OPERATOR_BI_AND:
+                        var->value = var1 & var2;
+                        break;
+                    case INTER_OPERATOR_BI_OR:
+                        var->value = var1 | var2;
+                        break;
+                    case INTER_OPERATOR_BI_XOR:
+                        var->value = var1 ^ var2;
+                        break;
+                    case INTER_OPERATOR_BI_SHL:
+                        var->value = var1 << var2;
+                        break;
+                    case INTER_OPERATOR_BI_SHR:
+                        var->value = var1 >> var2;
+                        break;
+                    case INTER_OPERATOR_BI_LESS:
+                        var->value = var1 < var2;
+                        break;
+                    case INTER_OPERATOR_BI_LESS_EQ:
+                        var->value = var1 <= var2;
+                        break;
+                    case INTER_OPERATOR_BI_GREATER:
+                        var->value = var1 > var2;
+                        break;
+                    case INTER_OPERATOR_BI_GREATER_EQ:
+                        var->value = var1 >= var2;
+                        break;
+                    case INTER_OPERATOR_BI_EQUAL:
+                        var->value = var1 == var2;
+                        break;
+                    case INTER_OPERATOR_BI_UNEQUAL:
+                        var->value = var1 != var2;
+                        break;
+                }
+                printf("(inter_sim) %s = %i (0x%04X)" ENDL, var->name, (int16_t)var->value, (uint16_t)var->value);
+                break;
+            }
+            default:
+                printf("unknown instruction type?" ENDL);
+                break;
+        }
+        state.pc++;
+    }
+
+    return true;
 }
 
 // returns false on error
