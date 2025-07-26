@@ -559,6 +559,15 @@ bool cmp_asm_generate(inter_ins_t *inter_ins, uint32_t inter_ins_count, asm_ins_
         }
     }
 
+    asm_ins_t asm_end = {
+        .label =  "end",
+        .instruction = "\"end\" -> PC",
+        .comment = NULL,
+    };
+    if (!cmp_asm_add_ins(&state, &asm_end)) {
+        return false;
+    }
+
     return true;
 }
 

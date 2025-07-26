@@ -401,3 +401,5 @@
 (02dd) 42       #  programs/assembly/defaults.ha  l. 64
 (02de) 01 ffff  #  programs/assembly/defaults.ha  l. 65
 (02e1) a4       #  programs/assembly/defaults.ha  l. 66
+# "end":
+(02e2) 06 02e2  #  l. 151

@@ -24,7 +24,7 @@ Arguments:
 -v / --verbose [0...4 optional]     |  Specify amount of output (default: 1)
 -h / --help                         |  This screen
 
-Specify path to output file (.txt) of HERA assembler""")
+Specify path to output file of HERA assembler""")
     exit()
 
 # TODO: fallback to .bin/.img parsing if .txt does not exist
@@ -268,7 +268,7 @@ def sim(program, init_state=None, max_steps=10000):
             print(f' {hex_w(sim_state["A"])}   {hex_w(sim_state["B"])}   {hex_w(sim_state["C"])}    {hex_w(sim_state["RAM_P"])}   {hex_w(sim_state["RAM"][sim_state["RAM_P"]])}     {s_stat}')
             print('\n'.join(debug_extras))
 
-        if '"end"  -> PC;' in instruction['src']:
+        if '"end"' in instruction['src'] and '->' in instruction['src'] and 'PC' in instruction['src']:
             print('Program ended')
             break
 

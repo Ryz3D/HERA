@@ -147,3 +147,5 @@ inc programs/assembly/defaults.ha;
     0x4000 -> RAM_P;
     RAM -> A;
     A -> *PUSH;
+"end":
+    "end" -> PC;
