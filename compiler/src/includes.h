@@ -12,6 +12,8 @@
 #define FILE_ENDL "\n"
 #define ASM_INDENT "    "
 #define ERROR "\e[1;5;31mERROR:\e[m "
+#define OK "\e[1;96mok\e[m"
+#define NOK "\e[1;33mno way\e[m"
 
 #include "tokenizer.c"
 #include "preprocessor.c"

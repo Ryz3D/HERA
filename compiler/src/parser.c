@@ -189,6 +189,39 @@ typedef struct cmp_parser_value {
     uint16_t i;
 } cmp_parser_value_t;
 
+const char *cmp_parser_pure_type_to_str(cmp_parser_pure_type_t pure_type, char *other_type) {
+    switch (pure_type) {
+        case PARSER_TYPE_INVALID:
+            return "invalid type?";
+        case PARSER_TYPE_VOID:
+            return "void";
+        case PARSER_TYPE_UINT8:
+            return "uint8";
+        case PARSER_TYPE_UINT16:
+            return "uint16";
+        case PARSER_TYPE_UINT32:
+            return "uint32";
+        case PARSER_TYPE_UINT64:
+            return "uint64";
+        case PARSER_TYPE_INT8:
+            return "int8";
+        case PARSER_TYPE_INT16:
+            return "int16";
+        case PARSER_TYPE_INT32:
+            return "int32";
+        case PARSER_TYPE_INT64:
+            return "int64";
+        case PARSER_TYPE_FLOAT:
+            return "fp_single";
+        case PARSER_TYPE_DOUBLE:
+            return "fp_double";
+        case PARSER_TYPE_OTHER:
+            return other_type != NULL ? other_type : "(unknown other type)";
+        default:
+            return "(unknown type?)";
+    }
+}
+
 token_t *cmp_parser_get_token(parser_state_t *state, int32_t offset) {
     if (state->i + offset < 0) {
         return &state->tokens[0];
@@ -1565,53 +1598,6 @@ bool cmp_parser_run(const char *f_path, inter_ins_t **ins, uint32_t *ins_count) 
     return true;
 }
 
-void cmp_inter_debug_print_pure_type(cmp_parser_pure_type_t pure_type, char *other_type) {
-    switch (pure_type) {
-        case PARSER_TYPE_INVALID:
-            printf("invalid type?");
-            break;
-        case PARSER_TYPE_VOID:
-            printf("void");
-            break;
-        case PARSER_TYPE_UINT8:
-            printf("uint8");
-            break;
-        case PARSER_TYPE_UINT16:
-            printf("uint16");
-            break;
-        case PARSER_TYPE_UINT32:
-            printf("uint32");
-            break;
-        case PARSER_TYPE_UINT64:
-            printf("uint64");
-            break;
-        case PARSER_TYPE_INT8:
-            printf("int8");
-            break;
-        case PARSER_TYPE_INT16:
-            printf("int16");
-            break;
-        case PARSER_TYPE_INT32:
-            printf("int32");
-            break;
-        case PARSER_TYPE_INT64:
-            printf("int64");
-            break;
-        case PARSER_TYPE_FLOAT:
-            printf("fp_single");
-            break;
-        case PARSER_TYPE_DOUBLE:
-            printf("fp_double");
-            break;
-        case PARSER_TYPE_OTHER:
-            printf("\"%s\"", other_type);
-            break;
-        default:
-            printf("unknown type?");
-            break;
-    }
-}
-
 void cmp_inter_debug_print_type(cmp_parser_type_t type) {
     for (uint8_t i = 0; i < CMP_PARSER_TYPE_MAX_MODIFIERS && type.modifiers[i] != PARSER_MODIFIER_NONE; i++) {
         switch (type.modifiers[i]) {
@@ -1634,7 +1620,7 @@ void cmp_inter_debug_print_type(cmp_parser_type_t type) {
                 break;
         }
     }
-    cmp_inter_debug_print_pure_type(type.pure_type, type.other_type);
+    printf("%s", cmp_parser_pure_type_to_str(type.pure_type, type.other_type));
     for (uint8_t i = 0; i < type.pointers; i++) {
         printf("*");
     }
@@ -1726,17 +1712,16 @@ void cmp_inter_debug_print_bi_operator(inter_operator_t op) {
 }
 
 void cmp_inter_debug_print(inter_ins_t *ins, uint32_t ins_count) {
+    printf("(inter_debug_print)" ENDL);
     for (uint32_t i = 0; i < ins_count; i++) {
         if (ins[i].label != NULL) {
             printf("%s:" ENDL, ins[i].label);
         }
-        printf("\t");
+        printf(ASM_INDENT);
         switch (ins[i].type) {
             case INTER_INS_DECLARATION: {
                 inter_ins_declaration_t *ins_t = (inter_ins_declaration_t *)ins[i].ins;
-                printf("DECL ");
-                cmp_inter_debug_print_pure_type(ins_t->type, NULL);
-                printf(" %s", ins_t->name);
+                printf("DECL %s %s", cmp_parser_pure_type_to_str(ins_t->type, NULL), ins_t->name);
                 if (ins_t->fixed) {
                     printf(" @ 0x%04X", ins_t->fixed_address);
                 }
@@ -1789,17 +1774,11 @@ void cmp_inter_debug_print(inter_ins_t *ins, uint32_t ins_count) {
                 printf("%s = ", ins_t->to);
                 if (!ins_t->op2) {
                     cmp_inter_debug_print_un_operator(ins_t->op);
-                    printf("(");
-                    cmp_inter_debug_print_pure_type(ins_t->type_a, NULL);
-                    printf(")%s" ENDL, ins_t->a);
+                    printf("(%s)%s" ENDL, cmp_parser_pure_type_to_str(ins_t->type_a, NULL), ins_t->a);
                 } else {
-                    printf("(");
-                    cmp_inter_debug_print_pure_type(ins_t->type_a, NULL);
-                    printf(")%s ", ins_t->a);
+                    printf("(%s)%s ", cmp_parser_pure_type_to_str(ins_t->type_a, NULL), ins_t->a);
                     cmp_inter_debug_print_bi_operator(ins_t->op);
-                    printf(" (");
-                    cmp_inter_debug_print_pure_type(ins_t->type_b, NULL);
-                    printf(")%s" ENDL, ins_t->b);
+                    printf(" (%s)%s" ENDL, cmp_parser_pure_type_to_str(ins_t->type_b, NULL), ins_t->b);
                 }
                 break;
             }
@@ -1808,17 +1787,11 @@ void cmp_inter_debug_print(inter_ins_t *ins, uint32_t ins_count) {
                 printf("%s = ", ins_t->to);
                 if (!ins_t->op2) {
                     cmp_inter_debug_print_un_operator(ins_t->op);
-                    printf("(POP ");
-                    cmp_inter_debug_print_pure_type(ins_t->type_a, NULL);
-                    printf(")" ENDL);
+                    printf("(POP %s)" ENDL, cmp_parser_pure_type_to_str(ins_t->type_a, NULL));
                 } else {
-                    printf("(POP ");
-                    cmp_inter_debug_print_pure_type(ins_t->type_a, NULL);
-                    printf(") ");
+                    printf("(POP %s) ", cmp_parser_pure_type_to_str(ins_t->type_a, NULL));
                     cmp_inter_debug_print_bi_operator(ins_t->op);
-                    printf(" (POP ");
-                    cmp_inter_debug_print_pure_type(ins_t->type_b, NULL);
-                    printf(")" ENDL);
+                    printf(" (POP %s)" ENDL, cmp_parser_pure_type_to_str(ins_t->type_b, NULL));
                 }
                 break;
             }
@@ -1866,22 +1839,23 @@ bool cmp_inter_debug_sim(inter_ins_t *ins, uint32_t ins_count) {
         .vars_count = 0,
     };
 
+    printf("(inter_debug_sim)" ENDL);
     while (state.pc < ins_count) {
         switch (ins[state.pc].type) {
             case INTER_INS_DECLARATION: {
                 inter_ins_declaration_t *ins_t = (inter_ins_declaration_t*)ins[state.pc].ins;
                 if (cmp_inter_debug_find_var(&state, ins_t->name) != NULL) {
-                    printf(ERROR "inter_sim redeclared variable \"%s\" at %u" ENDL, ins_t->name, state.pc);
+                    printf(ERROR "inter_debug_sim redeclared variable \"%s\" at %u" ENDL, ins_t->name, state.pc);
                 }
                 state.vars_count++;
                 state.vars = realloc(state.vars, state.vars_count * sizeof(inter_debug_var_t));
                 if (state.vars == NULL) {
-                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    printf(ERROR "inter_debug_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
                     return false;
                 }
                 state.vars[state.vars_count - 1].name = malloc(strlen(ins_t->name) + 1);
                 if (state.vars[state.vars_count - 1].name == NULL) {
-                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    printf(ERROR "inter_debug_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
                     return false;
                 }
                 memcpy(state.vars[state.vars_count - 1].name, ins_t->name, strlen(ins_t->name) + 1);
@@ -1893,7 +1867,7 @@ bool cmp_inter_debug_sim(inter_ins_t *ins, uint32_t ins_count) {
                 inter_ins_assignment_t *ins_t = (inter_ins_assignment_t*)ins[state.pc].ins;
                 inter_debug_var_t *var;
                 if ((var = cmp_inter_debug_find_var(&state, ins_t->to)) == NULL) {
-                    printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->to, state.pc);
+                    printf(ERROR "inter_debug_sim undeclared variable \"%s\" at %u" ENDL, ins_t->to, state.pc);
                     return false;
                 }
                 switch (ins_t->assignment_source) {
@@ -1903,14 +1877,14 @@ bool cmp_inter_debug_sim(inter_ins_t *ins, uint32_t ins_count) {
                     case INTER_INS_ASSIGNMENT_SOURCE_VARIABLE: {
                         inter_debug_var_t *var2;
                         if ((var2 = cmp_inter_debug_find_var(&state, ins_t->from_variable)) == NULL) {
-                            printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->from_variable, state.pc);
+                            printf(ERROR "inter_debug_sim undeclared variable \"%s\" at %u" ENDL, ins_t->from_variable, state.pc);
                             return false;
                         }
                         var->value = var2->value;
                         break;
                     }
                     default:
-                        printf(ERROR "inter_sim unknown assignment source %u at %u" ENDL, ins_t->assignment_source, state.pc);
+                        printf(ERROR "inter_debug_sim unknown assignment source %u at %u" ENDL, ins_t->assignment_source, state.pc);
                         break;
                 }
                 break;
@@ -1920,12 +1894,12 @@ bool cmp_inter_debug_sim(inter_ins_t *ins, uint32_t ins_count) {
                 state.stack_size++;
                 state.stack = realloc(state.stack, state.stack_size * sizeof(uint32_t));
                 if (state.stack == NULL) {
-                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    printf(ERROR "inter_debug_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
                     return false;
                 }
                 inter_debug_var_t *var;
                 if ((var = cmp_inter_debug_find_var(&state, ins_t->from)) == NULL) {
-                    printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->from, state.pc);
+                    printf(ERROR "inter_debug_sim undeclared variable \"%s\" at %u" ENDL, ins_t->from, state.pc);
                     return false;
                 }
                 state.stack[state.stack_size - 1] = var->value;
@@ -1934,20 +1908,20 @@ bool cmp_inter_debug_sim(inter_ins_t *ins, uint32_t ins_count) {
             case INTER_INS_POP: {
                 inter_ins_pop_t *ins_t = (inter_ins_pop_t*)ins[state.pc].ins;
                 if (state.stack_size == 0) {
-                    printf(ERROR "inter_sim stack empty" ENDL);
+                    printf(ERROR "inter_debug_sim stack empty" ENDL);
                     return false;
                 }
                 inter_debug_var_t *var;
                 if ((var = cmp_inter_debug_find_var(&state, ins_t->to)) == NULL) {
-                    printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->to, state.pc);
+                    printf(ERROR "inter_debug_sim undeclared variable \"%s\" at %u" ENDL, ins_t->to, state.pc);
                     return false;
                 }
                 var->value = state.stack[state.stack_size - 1];
-                printf("(inter_sim) %s = %i (0x%04X)" ENDL, var->name, (int16_t)var->value, (uint16_t)var->value);
+                printf(ASM_INDENT "%s = %i (0x%04X)" ENDL, var->name, (int16_t)var->value, (uint16_t)var->value);
                 state.stack_size--;
                 // state.stack = realloc(state.stack, state.stack_size * sizeof(uint32_t));
                 if (state.stack == NULL) {
-                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    printf(ERROR "inter_debug_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
                     return false;
                 }
                 break;
@@ -1961,7 +1935,7 @@ bool cmp_inter_debug_sim(inter_ins_t *ins, uint32_t ins_count) {
             case INTER_INS_STACK_OPERATION: {
                 inter_ins_stack_operation_t *ins_t = (inter_ins_stack_operation_t*)ins[state.pc].ins;
                 if (state.stack_size == 0 || (state.stack_size <= 1 && ins_t->op2)) {
-                    printf(ERROR "inter_sim stack empty" ENDL);
+                    printf(ERROR "inter_debug_sim stack empty" ENDL);
                     return false;
                 }
                 uint16_t var1 = state.stack[state.stack_size - 1];
@@ -1973,12 +1947,12 @@ bool cmp_inter_debug_sim(inter_ins_t *ins, uint32_t ins_count) {
                 }
                 // state.stack = realloc(state.stack, state.stack_size * sizeof(uint32_t));
                 if (state.stack == NULL) {
-                    printf(ERROR "inter_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
+                    printf(ERROR "inter_debug_sim out of memory (stack size %u, vars count %u)" ENDL, state.stack_size, state.vars_count);
                     return false;
                 }
                 inter_debug_var_t *var;
                 if ((var = cmp_inter_debug_find_var(&state, ins_t->to)) == NULL) {
-                    printf(ERROR "inter_sim undeclared variable \"%s\" at %u" ENDL, ins_t->to, state.pc);
+                    printf(ERROR "inter_debug_sim undeclared variable \"%s\" at %u" ENDL, ins_t->to, state.pc);
                     return false;
                 }
                 switch (ins_t->op) {
@@ -2052,7 +2026,7 @@ bool cmp_inter_debug_sim(inter_ins_t *ins, uint32_t ins_count) {
                         var->value = var1 != var2;
                         break;
                 }
-                printf("(inter_sim) %s = %i (0x%04X)" ENDL, var->name, (int16_t)var->value, (uint16_t)var->value);
+                printf(ASM_INDENT "%s = %i (0x%04X)" ENDL, var->name, (int16_t)var->value, (uint16_t)var->value);
                 break;
             }
             default:

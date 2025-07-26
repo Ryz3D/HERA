@@ -9,6 +9,8 @@ int main(int argc, char *argv[]) {
         path_src = argv[1];
     } else {
         printf(ERROR "specify source file as argument" ENDL);
+
+        printf(NOK ENDL);
         return 1;
     }
 #endif
@@ -17,6 +19,8 @@ int main(int argc, char *argv[]) {
     uint32_t inter_ins_count;
     if (!cmp_parser_run(path_src, &inter_ins, &inter_ins_count)) {
         free(inter_ins);
+
+        printf(NOK ENDL);
         return 1;
     }
 
@@ -25,13 +29,15 @@ int main(int argc, char *argv[]) {
     if (!cmp_asm_generate(inter_ins, inter_ins_count, &asm_ins, &asm_ins_count)) {
         free(inter_ins);
         free(asm_ins);
+
+        printf(NOK ENDL);
         return 1;
     }
 
     cmp_inter_debug_print(inter_ins, inter_ins_count);
-
-    printf(ENDL "---" ENDL ENDL);
-
+    printf(ENDL);
+    cmp_asm_debug_print(asm_ins, asm_ins_count);
+    printf(ENDL);
     cmp_inter_debug_sim(inter_ins, inter_ins_count);
 
     free(inter_ins);
@@ -41,13 +47,22 @@ int main(int argc, char *argv[]) {
     - optimize
      - simulate intermediate program, save known state, reset on label
      - remove unused variables
+    - output
+     - based on file extension of specified output path
+      - (tokens)
+      - (inter)
+      - (hera asm)
+      - (hera bin)
     */
 
-    if (!cmp_asm_write("./test.ha", asm_ins, asm_ins_count)) {
+    if (!cmp_asm_write("./programs/assembly/compiler_test.ha", asm_ins, asm_ins_count)) {
         free(asm_ins);
+
+        printf(NOK ENDL);
         return 1;
     }
     free(asm_ins);
 
+    printf(OK ENDL);
     return 0;
 }

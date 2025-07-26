@@ -1,0 +1,403 @@
+# "main":
+(0000) 05 00ff  #  programs/assembly/defaults.ha  l. 132
+(0003) 04 ffff  #  programs/assembly/defaults.ha  l. 133
+(0006) 01 000c  #  l. 8
+(0009) 05 4000  #  l. 9
+(000c) 14       #  l. 10
+(000d) 05 4000  #  l. 11
+(0010) 41       #  l. 12
+(0011) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(0014) 45       #  programs/assembly/defaults.ha  l. 137
+(0015) 14       #  l. 13
+(0016) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0019) 42       #  programs/assembly/defaults.ha  l. 64
+(001a) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(001d) a4       #  programs/assembly/defaults.ha  l. 66
+(001e) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0021) 42       #  programs/assembly/defaults.ha  l. 59
+(0022) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(0025) a4       #  programs/assembly/defaults.ha  l. 61
+(0026) 45       #  programs/assembly/defaults.ha  l. 145
+(0027) 41       #  programs/assembly/defaults.ha  l. 146
+(0028) 05 4002  #  l. 15
+(002b) 14       #  l. 16
+(002c) 05 4002  #  l. 17
+(002f) 41       #  l. 18
+(0030) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(0033) 45       #  programs/assembly/defaults.ha  l. 137
+(0034) 14       #  l. 19
+(0035) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0038) 42       #  programs/assembly/defaults.ha  l. 64
+(0039) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(003c) a4       #  programs/assembly/defaults.ha  l. 66
+(003d) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0040) 42       #  programs/assembly/defaults.ha  l. 59
+(0041) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(0044) a4       #  programs/assembly/defaults.ha  l. 61
+(0045) 45       #  programs/assembly/defaults.ha  l. 145
+(0046) 41       #  programs/assembly/defaults.ha  l. 146
+(0047) 02 ffff  #  l. 21
+(004a) a1       #  l. 22
+(004b) 05 4001  #  l. 23
+(004e) 14       #  l. 24
+(004f) 05 4001  #  l. 25
+(0052) 41       #  l. 26
+(0053) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(0056) 45       #  programs/assembly/defaults.ha  l. 137
+(0057) 14       #  l. 27
+(0058) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(005b) 42       #  programs/assembly/defaults.ha  l. 64
+(005c) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(005f) a4       #  programs/assembly/defaults.ha  l. 66
+(0060) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0063) 42       #  programs/assembly/defaults.ha  l. 59
+(0064) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(0067) a4       #  programs/assembly/defaults.ha  l. 61
+(0068) 45       #  programs/assembly/defaults.ha  l. 145
+(0069) 41       #  programs/assembly/defaults.ha  l. 146
+(006a) 05 4001  #  l. 29
+(006d) 14       #  l. 30
+(006e) 01 65eb  #  l. 32
+(0071) 05 4000  #  l. 33
+(0074) 14       #  l. 34
+(0075) 05 4000  #  l. 35
+(0078) 41       #  l. 36
+(0079) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(007c) 45       #  programs/assembly/defaults.ha  l. 137
+(007d) 14       #  l. 37
+(007e) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0081) 42       #  programs/assembly/defaults.ha  l. 64
+(0082) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0085) a4       #  programs/assembly/defaults.ha  l. 66
+(0086) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0089) 42       #  programs/assembly/defaults.ha  l. 59
+(008a) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(008d) a4       #  programs/assembly/defaults.ha  l. 61
+(008e) 45       #  programs/assembly/defaults.ha  l. 145
+(008f) 41       #  programs/assembly/defaults.ha  l. 146
+(0090) 05 4003  #  l. 39
+(0093) 14       #  l. 40
+(0094) 05 4003  #  l. 42
+(0097) 41       #  l. 43
+(0098) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(009b) 45       #  programs/assembly/defaults.ha  l. 137
+(009c) 14       #  l. 44
+(009d) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(00a0) 42       #  programs/assembly/defaults.ha  l. 64
+(00a1) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(00a4) a4       #  programs/assembly/defaults.ha  l. 66
+(00a5) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(00a8) 42       #  programs/assembly/defaults.ha  l. 59
+(00a9) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(00ac) a4       #  programs/assembly/defaults.ha  l. 61
+(00ad) 45       #  programs/assembly/defaults.ha  l. 145
+(00ae) 41       #  programs/assembly/defaults.ha  l. 146
+(00af) 05 4001  #  l. 46
+(00b2) 14       #  l. 47
+(00b3) 05 4001  #  l. 48
+(00b6) 41       #  l. 49
+(00b7) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(00ba) 45       #  programs/assembly/defaults.ha  l. 137
+(00bb) 14       #  l. 50
+(00bc) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(00bf) 42       #  programs/assembly/defaults.ha  l. 64
+(00c0) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(00c3) a4       #  programs/assembly/defaults.ha  l. 66
+(00c4) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(00c7) 42       #  programs/assembly/defaults.ha  l. 59
+(00c8) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(00cb) a4       #  programs/assembly/defaults.ha  l. 61
+(00cc) 45       #  programs/assembly/defaults.ha  l. 145
+(00cd) 41       #  programs/assembly/defaults.ha  l. 146
+(00ce) 05 4004  #  l. 52
+(00d1) 14       #  l. 53
+(00d2) 05 4004  #  l. 55
+(00d5) 41       #  l. 56
+(00d6) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(00d9) 45       #  programs/assembly/defaults.ha  l. 137
+(00da) 14       #  l. 57
+(00db) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(00de) 42       #  programs/assembly/defaults.ha  l. 64
+(00df) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(00e2) a4       #  programs/assembly/defaults.ha  l. 66
+(00e3) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(00e6) 42       #  programs/assembly/defaults.ha  l. 59
+(00e7) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(00ea) a4       #  programs/assembly/defaults.ha  l. 61
+(00eb) 45       #  programs/assembly/defaults.ha  l. 145
+(00ec) 41       #  programs/assembly/defaults.ha  l. 146
+(00ed) 05 4001  #  l. 59
+(00f0) 14       #  l. 60
+(00f1) 05 4001  #  l. 61
+(00f4) 41       #  l. 62
+(00f5) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(00f8) 45       #  programs/assembly/defaults.ha  l. 137
+(00f9) 14       #  l. 63
+(00fa) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(00fd) 42       #  programs/assembly/defaults.ha  l. 64
+(00fe) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0101) a4       #  programs/assembly/defaults.ha  l. 66
+(0102) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0105) 42       #  programs/assembly/defaults.ha  l. 59
+(0106) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(0109) a4       #  programs/assembly/defaults.ha  l. 61
+(010a) 45       #  programs/assembly/defaults.ha  l. 145
+(010b) 41       #  programs/assembly/defaults.ha  l. 146
+(010c) 05 4005  #  l. 65
+(010f) 14       #  l. 66
+(0110) 01 0001  #  l. 67
+(0113) 05 4000  #  l. 68
+(0116) 14       #  l. 69
+(0117) 05 4000  #  l. 70
+(011a) 41       #  l. 71
+(011b) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(011e) 45       #  programs/assembly/defaults.ha  l. 137
+(011f) 14       #  l. 72
+(0120) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0123) 42       #  programs/assembly/defaults.ha  l. 64
+(0124) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0127) a4       #  programs/assembly/defaults.ha  l. 66
+(0128) 05 4003  #  l. 73
+(012b) 41       #  l. 74
+(012c) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(012f) 45       #  programs/assembly/defaults.ha  l. 137
+(0130) 14       #  l. 75
+(0131) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0134) 42       #  programs/assembly/defaults.ha  l. 64
+(0135) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0138) a4       #  programs/assembly/defaults.ha  l. 66
+(0139) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(013c) 42       #  programs/assembly/defaults.ha  l. 59
+(013d) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(0140) a4       #  programs/assembly/defaults.ha  l. 61
+(0141) 45       #  programs/assembly/defaults.ha  l. 145
+(0142) 41       #  programs/assembly/defaults.ha  l. 146
+(0143) 05 0011  #  l. 1
+(0146) 14       #  l. 1
+(0147) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(014a) 42       #  programs/assembly/defaults.ha  l. 59
+(014b) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(014e) a4       #  programs/assembly/defaults.ha  l. 61
+(014f) 45       #  programs/assembly/defaults.ha  l. 145
+(0150) 42       #  programs/assembly/defaults.ha  l. 146
+(0151) 05 0011  #  l. 1
+(0154) 41       #  l. 1
+(0155) 13       #  programs/assembly/defaults.ha  l. 87
+(0156) 21       #  programs/assembly/defaults.ha  l. 88
+(0157) b2       #  programs/assembly/defaults.ha  l. 89
+(0158) 31       #  programs/assembly/defaults.ha  l. 90
+(0159) a1       #  programs/assembly/defaults.ha  l. 91
+(015a) 05 4001  #  l. 79
+(015d) 14       #  l. 80
+(015e) 05 4001  #  l. 81
+(0161) 41       #  l. 82
+(0162) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(0165) 45       #  programs/assembly/defaults.ha  l. 137
+(0166) 14       #  l. 83
+(0167) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(016a) 42       #  programs/assembly/defaults.ha  l. 64
+(016b) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(016e) a4       #  programs/assembly/defaults.ha  l. 66
+(016f) 01 0002  #  l. 84
+(0172) 05 4000  #  l. 85
+(0175) 14       #  l. 86
+(0176) 05 4000  #  l. 87
+(0179) 41       #  l. 88
+(017a) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(017d) 45       #  programs/assembly/defaults.ha  l. 137
+(017e) 14       #  l. 89
+(017f) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0182) 42       #  programs/assembly/defaults.ha  l. 64
+(0183) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0186) a4       #  programs/assembly/defaults.ha  l. 66
+(0187) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(018a) 42       #  programs/assembly/defaults.ha  l. 59
+(018b) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(018e) a4       #  programs/assembly/defaults.ha  l. 61
+(018f) 45       #  programs/assembly/defaults.ha  l. 145
+(0190) 41       #  programs/assembly/defaults.ha  l. 146
+(0191) 05 0011  #  l. 1
+(0194) 14       #  l. 1
+(0195) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0198) 42       #  programs/assembly/defaults.ha  l. 59
+(0199) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(019c) a4       #  programs/assembly/defaults.ha  l. 61
+(019d) 45       #  programs/assembly/defaults.ha  l. 145
+(019e) 42       #  programs/assembly/defaults.ha  l. 146
+(019f) 05 0011  #  l. 1
+(01a2) 41       #  l. 1
+(01a3) 21       #  l. 92
+(01a4) a1       #  l. 93
+(01a5) 05 4001  #  l. 94
+(01a8) 14       #  l. 95
+(01a9) 05 4001  #  l. 96
+(01ac) 41       #  l. 97
+(01ad) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(01b0) 45       #  programs/assembly/defaults.ha  l. 137
+(01b1) 14       #  l. 98
+(01b2) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(01b5) 42       #  programs/assembly/defaults.ha  l. 64
+(01b6) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(01b9) a4       #  programs/assembly/defaults.ha  l. 66
+(01ba) 01 0004  #  l. 99
+(01bd) 05 4000  #  l. 100
+(01c0) 14       #  l. 101
+(01c1) 05 4000  #  l. 102
+(01c4) 41       #  l. 103
+(01c5) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(01c8) 45       #  programs/assembly/defaults.ha  l. 137
+(01c9) 14       #  l. 104
+(01ca) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(01cd) 42       #  programs/assembly/defaults.ha  l. 64
+(01ce) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(01d1) a4       #  programs/assembly/defaults.ha  l. 66
+(01d2) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(01d5) 42       #  programs/assembly/defaults.ha  l. 59
+(01d6) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(01d9) a4       #  programs/assembly/defaults.ha  l. 61
+(01da) 45       #  programs/assembly/defaults.ha  l. 145
+(01db) 41       #  programs/assembly/defaults.ha  l. 146
+(01dc) 05 0011  #  l. 1
+(01df) 14       #  l. 1
+(01e0) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(01e3) 42       #  programs/assembly/defaults.ha  l. 59
+(01e4) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(01e7) a4       #  programs/assembly/defaults.ha  l. 61
+(01e8) 45       #  programs/assembly/defaults.ha  l. 145
+(01e9) 42       #  programs/assembly/defaults.ha  l. 146
+(01ea) 05 0011  #  l. 1
+(01ed) 41       #  l. 1
+(01ee) 05 0011  #  l. 1
+(01f1) 14       #  l. 1
+(01f2) 05 0012  #  l. 1
+(01f5) 24       #  l. 1
+(01f6) 05 0012  #  programs/assembly/defaults.ha  l. 15
+(01f9) 24       #  programs/assembly/defaults.ha  l. 16
+(01fa) 12       #  programs/assembly/defaults.ha  l. 109
+(01fb) c3       #  programs/assembly/defaults.ha  l. 110
+(01fc) 05 0012  #  programs/assembly/defaults.ha  l. 19
+(01ff) 42       #  programs/assembly/defaults.ha  l. 20
+(0200) 21       #  programs/assembly/defaults.ha  l. 112
+(0201) c2       #  programs/assembly/defaults.ha  l. 113
+(0202) 31       #  programs/assembly/defaults.ha  l. 114
+(0203) c3       #  programs/assembly/defaults.ha  l. 115
+(0204) 05 0011  #  l. 1
+(0207) 41       #  l. 1
+(0208) 05 0012  #  l. 1
+(020b) 42       #  l. 1
+(020c) c1       #  programs/assembly/defaults.ha  l. 119
+(020d) 32       #  programs/assembly/defaults.ha  l. 120
+(020e) c1       #  programs/assembly/defaults.ha  l. 121
+(020f) 05 4001  #  l. 108
+(0212) 14       #  l. 109
+(0213) 05 4001  #  l. 110
+(0216) 41       #  l. 111
+(0217) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(021a) 45       #  programs/assembly/defaults.ha  l. 137
+(021b) 14       #  l. 112
+(021c) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(021f) 42       #  programs/assembly/defaults.ha  l. 64
+(0220) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0223) a4       #  programs/assembly/defaults.ha  l. 66
+(0224) 05 4005  #  l. 113
+(0227) 41       #  l. 114
+(0228) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(022b) 45       #  programs/assembly/defaults.ha  l. 137
+(022c) 14       #  l. 115
+(022d) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0230) 42       #  programs/assembly/defaults.ha  l. 64
+(0231) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0234) a4       #  programs/assembly/defaults.ha  l. 66
+(0235) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0238) 42       #  programs/assembly/defaults.ha  l. 59
+(0239) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(023c) a4       #  programs/assembly/defaults.ha  l. 61
+(023d) 45       #  programs/assembly/defaults.ha  l. 145
+(023e) 41       #  programs/assembly/defaults.ha  l. 146
+(023f) 05 0011  #  l. 1
+(0242) 14       #  l. 1
+(0243) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0246) 42       #  programs/assembly/defaults.ha  l. 59
+(0247) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(024a) a4       #  programs/assembly/defaults.ha  l. 61
+(024b) 45       #  programs/assembly/defaults.ha  l. 145
+(024c) 42       #  programs/assembly/defaults.ha  l. 146
+(024d) 05 0011  #  l. 1
+(0250) 41       #  l. 1
+(0251) 05 4001  #  l. 118
+(0254) 14       #  l. 119
+(0255) 05 4001  #  l. 120
+(0258) 41       #  l. 121
+(0259) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(025c) 45       #  programs/assembly/defaults.ha  l. 137
+(025d) 14       #  l. 122
+(025e) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0261) 42       #  programs/assembly/defaults.ha  l. 64
+(0262) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0265) a4       #  programs/assembly/defaults.ha  l. 66
+(0266) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0269) 42       #  programs/assembly/defaults.ha  l. 59
+(026a) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(026d) a4       #  programs/assembly/defaults.ha  l. 61
+(026e) 45       #  programs/assembly/defaults.ha  l. 145
+(026f) 41       #  programs/assembly/defaults.ha  l. 146
+(0270) 05 4001  #  l. 124
+(0273) 14       #  l. 125
+(0274) 05 4005  #  l. 126
+(0277) 41       #  l. 127
+(0278) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(027b) 45       #  programs/assembly/defaults.ha  l. 137
+(027c) 14       #  l. 128
+(027d) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(0280) 42       #  programs/assembly/defaults.ha  l. 64
+(0281) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(0284) a4       #  programs/assembly/defaults.ha  l. 66
+(0285) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(0288) 42       #  programs/assembly/defaults.ha  l. 59
+(0289) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(028c) a4       #  programs/assembly/defaults.ha  l. 61
+(028d) 45       #  programs/assembly/defaults.ha  l. 145
+(028e) 41       #  programs/assembly/defaults.ha  l. 146
+(028f) 05 4001  #  l. 130
+(0292) 14       #  l. 131
+(0293) 01 0025  #  l. 132
+(0296) 05 4000  #  l. 133
+(0299) 14       #  l. 134
+(029a) 05 4000  #  l. 135
+(029d) 41       #  l. 136
+(029e) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(02a1) 45       #  programs/assembly/defaults.ha  l. 137
+(02a2) 14       #  l. 137
+(02a3) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(02a6) 42       #  programs/assembly/defaults.ha  l. 64
+(02a7) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(02aa) a4       #  programs/assembly/defaults.ha  l. 66
+(02ab) 05 4005  #  l. 138
+(02ae) 41       #  l. 139
+(02af) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(02b2) 45       #  programs/assembly/defaults.ha  l. 137
+(02b3) 14       #  l. 140
+(02b4) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(02b7) 42       #  programs/assembly/defaults.ha  l. 64
+(02b8) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(02bb) a4       #  programs/assembly/defaults.ha  l. 66
+(02bc) 05 00ff  #  programs/assembly/defaults.ha  l. 143
+(02bf) 42       #  programs/assembly/defaults.ha  l. 59
+(02c0) 01 0001  #  programs/assembly/defaults.ha  l. 60
+(02c3) a4       #  programs/assembly/defaults.ha  l. 61
+(02c4) 45       #  programs/assembly/defaults.ha  l. 145
+(02c5) 41       #  programs/assembly/defaults.ha  l. 146
+(02c6) 05 4001  #  l. 142
+(02c9) 14       #  l. 143
+(02ca) 01 0000  #  l. 144
+(02cd) 05 4000  #  l. 145
+(02d0) 14       #  l. 146
+(02d1) 05 4000  #  l. 147
+(02d4) 41       #  l. 148
+(02d5) 05 00ff  #  programs/assembly/defaults.ha  l. 136
+(02d8) 45       #  programs/assembly/defaults.ha  l. 137
+(02d9) 14       #  l. 149
+(02da) 05 00ff  #  programs/assembly/defaults.ha  l. 139
+(02dd) 42       #  programs/assembly/defaults.ha  l. 64
+(02de) 01 ffff  #  programs/assembly/defaults.ha  l. 65
+(02e1) a4       #  programs/assembly/defaults.ha  l. 66
